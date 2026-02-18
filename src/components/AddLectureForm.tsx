@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X } from "lucide-react";
 
 const DAYS: DayOfWeek[] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const HOURS = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, "0")); // 01–12
+const MINUTES = ["00", "15", "30", "45"];
 
 interface AddLectureFormProps {
   onAdd: (lecture: Omit<Lecture, "id">) => void;
@@ -14,6 +16,100 @@ interface AddLectureFormProps {
   defaultDay?: DayOfWeek;
   initial?: Lecture;
   onUpdate?: (updates: Partial<Omit<Lecture, "id">>) => void;
+}
+
+/** Convert "HH:mm" 24h to { hour12, minute, ampm } */
+function from24(time24: string): { hour: string; minute: string; ampm: "AM" | "PM" } {
+  const [h, m] = time24.split(":").map(Number);
+  const ampm: "AM" | "PM" = h >= 12 ? "PM" : "AM";
+  const hour12 = h % 12 || 12;
+  return { hour: String(hour12).padStart(2, "0"), minute: String(m).padStart(2, "0"), ampm };
+}
+
+/** Convert { hour12, minute, ampm } to "HH:mm" 24h */
+function to24(hour: string, minute: string, ampm: "AM" | "PM"): string {
+  let h = parseInt(hour);
+  if (ampm === "AM" && h === 12) h = 0;
+  if (ampm === "PM" && h !== 12) h += 12;
+  return `${String(h).padStart(2, "0")}:${minute}`;
+}
+
+function TimeSelector({
+  label,
+  id,
+  value,
+  onChange,
+}: {
+  label: string;
+  id: string;
+  value: string;
+  onChange: (val: string) => void;
+}) {
+  const parsed = from24(value);
+  const [hour, setHour] = useState(parsed.hour);
+  const [minute, setMinute] = useState(parsed.minute);
+  const [ampm, setAmpm] = useState<"AM" | "PM">(parsed.ampm);
+
+  const update = (h: string, m: string, ap: "AM" | "PM") => {
+    onChange(to24(h, m, ap));
+  };
+
+  return (
+    <div>
+      <Label htmlFor={id} className="text-sm font-medium text-foreground mb-1 block">{label}</Label>
+      <div className="flex gap-1.5">
+        {/* Hour */}
+        <Select
+          value={hour}
+          onValueChange={(v) => { setHour(v); update(v, minute, ampm); }}
+        >
+          <SelectTrigger className="h-12 flex-1 text-base bg-background border-border">
+            <SelectValue placeholder="HH" />
+          </SelectTrigger>
+          <SelectContent>
+            {HOURS.map((h) => (
+              <SelectItem key={h} value={h}>{h}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <span className="flex items-center text-foreground font-bold text-lg">:</span>
+
+        {/* Minute */}
+        <Select
+          value={minute}
+          onValueChange={(v) => { setMinute(v); update(hour, v, ampm); }}
+        >
+          <SelectTrigger className="h-12 flex-1 text-base bg-background border-border">
+            <SelectValue placeholder="MM" />
+          </SelectTrigger>
+          <SelectContent>
+            {MINUTES.map((m) => (
+              <SelectItem key={m} value={m}>{m}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* AM/PM */}
+        <div className="flex rounded-lg overflow-hidden border border-border h-12">
+          {(["AM", "PM"] as const).map((ap) => (
+            <button
+              key={ap}
+              type="button"
+              onClick={() => { setAmpm(ap); update(hour, minute, ap); }}
+              className={`flex-1 px-3 text-sm font-bold transition-colors ${
+                ampm === ap
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-background text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              {ap}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function AddLectureForm({ onAdd, onClose, defaultDay, initial, onUpdate }: AddLectureFormProps) {
@@ -77,28 +173,8 @@ export function AddLectureForm({ onAdd, onClose, defaultDay, initial, onUpdate }
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <Label htmlFor="start" className="text-sm font-medium text-foreground mb-1 block">Start Time</Label>
-          <Input
-            id="start"
-            type="time"
-            value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
-            className="h-12 text-base bg-background border-border"
-          />
-        </div>
-        <div>
-          <Label htmlFor="end" className="text-sm font-medium text-foreground mb-1 block">End Time</Label>
-          <Input
-            id="end"
-            type="time"
-            value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
-            className="h-12 text-base bg-background border-border"
-          />
-        </div>
-      </div>
+      <TimeSelector label="Start Time" id="start" value={startTime} onChange={setStartTime} />
+      <TimeSelector label="End Time" id="end" value={endTime} onChange={setEndTime} />
 
       <div>
         <Label className="text-sm font-medium text-foreground mb-1 block">Type</Label>

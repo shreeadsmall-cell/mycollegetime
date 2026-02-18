@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { useTimetable, DayOfWeek } from "@/hooks/useTimetable";
+import { useState, useRef } from "react";
+import { useTimetable, DayOfWeek, Lecture } from "@/hooks/useTimetable";
 import { AddLectureForm } from "@/components/AddLectureForm";
 import { LectureCard } from "@/components/LectureCard";
-import { BookOpen, Plus, ArrowRight, Sparkles } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { BookOpen, Plus, ArrowRight, Sparkles, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const DAYS: DayOfWeek[] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -12,9 +13,14 @@ interface TimetableSetupProps {
 }
 
 export function TimetableSetup({ onDone }: TimetableSetupProps) {
-  const { lectures, addLecture, deleteLecture, updateLecture } = useTimetable();
+  const { lectures, addLecture, deleteLecture, updateLecture, resetTimetable } = useTimetable();
   const [showForm, setShowForm] = useState(false);
   const [activeDay, setActiveDay] = useState<DayOfWeek>("Monday");
+
+  // Drag state
+  const dragIndex = useRef<number | null>(null);
+  const dragOverIndex = useRef<number | null>(null);
+  const [dragActive, setDragActive] = useState(false);
 
   const dayLectures = lectures
     .filter((l) => l.day === activeDay)
@@ -23,13 +29,67 @@ export function TimetableSetup({ onDone }: TimetableSetupProps) {
       return toMins(a.startTime) - toMins(b.startTime);
     });
 
+  const handleDragStart = (index: number) => {
+    dragIndex.current = index;
+    setDragActive(true);
+  };
+
+  const handleDragEnter = (index: number) => {
+    dragOverIndex.current = index;
+  };
+
+  const handleDragEnd = () => {
+    const from = dragIndex.current;
+    const to = dragOverIndex.current;
+
+    if (from !== null && to !== null && from !== to) {
+      // Swap start/end times between the two lectures to "reorder" them
+      const moved = dayLectures[from];
+      const target = dayLectures[to];
+
+      // Shift all times: simple swap of startTime/endTime between the two
+      const movedDuration = calcDuration(moved);
+      const targetDuration = calcDuration(target);
+
+      // Assign the target's startTime to moved, recalc end; and vice versa
+      const newMovedStart = target.startTime;
+      const newMovedEnd = addMinutes(newMovedStart, movedDuration);
+      const newTargetStart = newMovedEnd;
+      const newTargetEnd = addMinutes(newTargetStart, targetDuration);
+
+      updateLecture(moved.id, { startTime: newMovedStart, endTime: newMovedEnd });
+      updateLecture(target.id, { startTime: newTargetStart, endTime: newTargetEnd });
+    }
+
+    dragIndex.current = null;
+    dragOverIndex.current = null;
+    setDragActive(false);
+  };
+
+  function calcDuration(l: Lecture): number {
+    const [sh, sm] = l.startTime.split(":").map(Number);
+    const [eh, em] = l.endTime.split(":").map(Number);
+    return (eh * 60 + em) - (sh * 60 + sm);
+  }
+
+  function addMinutes(time: string, mins: number): string {
+    const [h, m] = time.split(":").map(Number);
+    const total = h * 60 + m + mins;
+    const rh = Math.floor(total / 60) % 24;
+    const rm = total % 60;
+    return `${String(rh).padStart(2, "0")}:${String(rm).padStart(2, "0")}`;
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-background pb-28">
       {/* Hero */}
       <div className="bg-primary text-primary-foreground px-4 pt-12 pb-8">
-        <div className="flex items-center gap-2 mb-2">
-          <BookOpen size={22} />
-          <span className="font-bold text-lg tracking-tight">CollegeTime</span>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <BookOpen size={22} />
+            <span className="font-bold text-lg tracking-tight">CollegeTime</span>
+          </div>
+          <ThemeToggle />
         </div>
         <h1 className="text-2xl font-bold leading-tight mt-2">Set up your<br />weekly timetable</h1>
         <p className="text-sm opacity-75 mt-2">Add your lectures, breaks, and free periods for each day.</p>
@@ -80,6 +140,13 @@ export function TimetableSetup({ onDone }: TimetableSetupProps) {
           </div>
         )}
 
+        {/* Drag hint */}
+        {dayLectures.length > 1 && !showForm && (
+          <p className="text-xs text-muted-foreground flex items-center gap-1">
+            <GripVertical size={12} /> Drag entries to reorder
+          </p>
+        )}
+
         {/* Lectures for day */}
         {dayLectures.length === 0 && !showForm && (
           <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
@@ -89,14 +156,31 @@ export function TimetableSetup({ onDone }: TimetableSetupProps) {
           </div>
         )}
 
-        {dayLectures.map((lecture) => (
-          <LectureCard
+        {dayLectures.map((lecture, index) => (
+          <div
             key={lecture.id}
-            entry={lecture}
-            variant={lecture.type === "Break" ? "break" : "default"}
-            onEdit={(updates) => updateLecture(lecture.id, updates)}
-            onDelete={() => deleteLecture(lecture.id)}
-          />
+            draggable
+            onDragStart={() => handleDragStart(index)}
+            onDragEnter={() => handleDragEnter(index)}
+            onDragEnd={handleDragEnd}
+            onDragOver={(e) => e.preventDefault()}
+            className={`flex items-stretch gap-2 transition-opacity ${
+              dragActive && dragIndex.current === index ? "opacity-40" : "opacity-100"
+            }`}
+          >
+            {/* Drag handle */}
+            <div className="flex items-center px-1 cursor-grab active:cursor-grabbing text-muted-foreground touch-none">
+              <GripVertical size={18} />
+            </div>
+            <div className="flex-1">
+              <LectureCard
+                entry={lecture}
+                variant={lecture.type === "Break" ? "break" : "default"}
+                onEdit={(updates) => updateLecture(lecture.id, updates)}
+                onDelete={() => deleteLecture(lecture.id)}
+              />
+            </div>
+          </div>
         ))}
       </div>
 

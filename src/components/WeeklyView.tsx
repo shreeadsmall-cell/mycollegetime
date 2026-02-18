@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useTimetable, DayOfWeek } from "@/hooks/useTimetable";
 import { LectureCard } from "@/components/LectureCard";
-import { ChevronLeft, ChevronRight, Plus, LayoutDashboard } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { ChevronLeft, ChevronRight, Plus, LayoutDashboard, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const DAYS: DayOfWeek[] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -9,9 +10,10 @@ const DAYS: DayOfWeek[] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday
 interface WeeklyViewProps {
   onAddLecture: () => void;
   onBack: () => void;
+  onExport: () => void;
 }
 
-export function WeeklyView({ onAddLecture, onBack }: WeeklyViewProps) {
+export function WeeklyView({ onAddLecture, onBack, onExport }: WeeklyViewProps) {
   const { getDaySchedule, updateLecture, deleteLecture } = useTimetable();
 
   const todayIndex = (() => {
@@ -30,11 +32,14 @@ export function WeeklyView({ onAddLecture, onBack }: WeeklyViewProps) {
     <div className="flex flex-col min-h-screen bg-background pb-24">
       {/* Header */}
       <div className="bg-primary text-primary-foreground px-4 pt-10 pb-5">
-        <div className="flex items-center gap-3 mb-4">
-          <button onClick={onBack} className="p-2 rounded-lg bg-primary-foreground/10 text-primary-foreground">
-            <ChevronLeft size={20} />
-          </button>
-          <h1 className="text-xl font-bold">Weekly Timetable</h1>
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-3">
+            <button onClick={onBack} className="p-2 rounded-lg bg-primary-foreground/10 text-primary-foreground">
+              <ChevronLeft size={20} />
+            </button>
+            <h1 className="text-xl font-bold">Weekly Timetable</h1>
+          </div>
+          <ThemeToggle />
         </div>
 
         {/* Day switcher */}
@@ -99,6 +104,9 @@ export function WeeklyView({ onAddLecture, onBack }: WeeklyViewProps) {
       <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 py-3 flex gap-2">
         <Button onClick={onAddLecture} className="flex-1 h-12 gap-2 font-semibold text-base bg-primary text-primary-foreground">
           <Plus size={18} /> Add Lecture
+        </Button>
+        <Button onClick={onExport} variant="outline" className="h-12 px-4 text-foreground border-border">
+          <Download size={18} />
         </Button>
         <Button onClick={onBack} variant="outline" className="h-12 px-4 text-foreground border-border">
           <LayoutDashboard size={18} />
