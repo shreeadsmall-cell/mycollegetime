@@ -92,7 +92,7 @@ Rules:
         body: JSON.stringify({
           model: "google/gemini-2.5-pro",
           messages,
-          max_tokens: 4096,
+          max_tokens: 16000,
         }),
       }
     );
@@ -117,26 +117,68 @@ Rules:
 
     const aiResult = await response.json();
     const rawContent = aiResult.choices?.[0]?.message?.content ?? "";
+    console.log("AI raw content length:", rawContent.length);
 
     // Strip markdown code blocks if present
-    const cleaned = rawContent
+    let cleaned = rawContent
       .replace(/```json\s*/gi, "")
       .replace(/```\s*/gi, "")
       .trim();
 
-    // Parse JSON
+    // Extract JSON array robustly — find the outermost [ ... ] block
+    const arrayStart = cleaned.indexOf("[");
+    const arrayEnd = cleaned.lastIndexOf("]");
+    if (arrayStart !== -1 && arrayEnd !== -1 && arrayEnd > arrayStart) {
+      cleaned = cleaned.slice(arrayStart, arrayEnd + 1);
+    }
+
+    // If JSON is truncated (incomplete), try to repair it by closing open structures
+    const repairTruncatedJSON = (str: string): string => {
+      // Count open braces/brackets to detect truncation
+      let braces = 0;
+      let brackets = 0;
+      let inString = false;
+      let escape = false;
+
+      for (const ch of str) {
+        if (escape) { escape = false; continue; }
+        if (ch === "\\" && inString) { escape = true; continue; }
+        if (ch === '"') { inString = !inString; continue; }
+        if (inString) continue;
+        if (ch === "{") braces++;
+        if (ch === "}") braces--;
+        if (ch === "[") brackets++;
+        if (ch === "]") brackets--;
+      }
+
+      let repaired = str;
+      // Close any open string first (if we ended mid-string)
+      // Close open objects
+      for (let i = 0; i < braces; i++) repaired += "}";
+      // Close open arrays
+      for (let i = 0; i < brackets; i++) repaired += "]";
+      return repaired;
+    };
+
     let entries;
     try {
       entries = JSON.parse(cleaned);
     } catch {
-      console.error("Failed to parse AI output:", cleaned);
-      return new Response(
-        JSON.stringify({
-          error:
-            "Could not parse the timetable from the image. Please ensure the image is clear and contains a visible timetable.",
-        }),
-        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      // Try repairing truncated JSON
+      try {
+        const repaired = repairTruncatedJSON(cleaned);
+        entries = JSON.parse(repaired);
+        console.log("Parsed after JSON repair, entries:", entries?.length);
+      } catch (repairErr) {
+        console.error("Failed to parse AI output:", cleaned.slice(0, 500));
+        return new Response(
+          JSON.stringify({
+            error:
+              "Could not parse the timetable from the image. Please ensure the image is clear and contains a visible timetable.",
+          }),
+          { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     if (!Array.isArray(entries) || entries.length === 0) {
