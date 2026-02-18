@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { useTimetable, ScheduleEntry } from "@/hooks/useTimetable";
 import { LectureCard } from "@/components/LectureCard";
-import { Clock, CalendarDays, Plus, RotateCcw } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Clock, CalendarDays, Plus, RotateCcw, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface DashboardProps {
   onAddLecture: () => void;
   onReset: () => void;
   onViewWeekly: () => void;
+  onExport: () => void;
 }
 
 function formatTime(t: string) {
@@ -24,7 +26,7 @@ function getGreeting() {
   return "Good evening";
 }
 
-export function Dashboard({ onAddLecture, onReset, onViewWeekly }: DashboardProps) {
+export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport }: DashboardProps) {
   const { getTodaySchedule, getCurrentLecture, getUpcomingLectures, updateLecture, deleteLecture } = useTimetable();
   const [now, setNow] = useState(new Date());
 
@@ -51,11 +53,16 @@ export function Dashboard({ onAddLecture, onReset, onViewWeekly }: DashboardProp
     <div className="flex flex-col min-h-screen bg-background pb-24">
       {/* Header */}
       <div className="bg-primary text-primary-foreground px-4 pt-10 pb-6">
-        <p className="text-sm opacity-80">{getGreeting()} 👋</p>
-        <h1 className="text-2xl font-bold mt-0.5">Your Schedule</h1>
-        <div className="flex items-center gap-2 mt-2 opacity-80">
-          <Clock size={14} />
-          <span className="text-sm">{todayName} • {timeStr}</span>
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-sm opacity-80">{getGreeting()} 👋</p>
+            <h1 className="text-2xl font-bold mt-0.5">Your Schedule</h1>
+            <div className="flex items-center gap-2 mt-2 opacity-80">
+              <Clock size={14} />
+              <span className="text-sm">{todayName} • {timeStr}</span>
+            </div>
+          </div>
+          <ThemeToggle />
         </div>
       </div>
 
@@ -140,18 +147,13 @@ export function Dashboard({ onAddLecture, onReset, onViewWeekly }: DashboardProp
         >
           <Plus size={18} /> Add Lecture
         </Button>
-        <Button
-          onClick={onViewWeekly}
-          variant="outline"
-          className="h-12 px-4 text-foreground border-border"
-        >
+        <Button onClick={onViewWeekly} variant="outline" className="h-12 px-4 text-foreground border-border">
           <CalendarDays size={18} />
         </Button>
-        <Button
-          onClick={onReset}
-          variant="outline"
-          className="h-12 px-4 text-destructive border-border"
-        >
+        <Button onClick={onExport} variant="outline" className="h-12 px-4 text-foreground border-border">
+          <Download size={18} />
+        </Button>
+        <Button onClick={onReset} variant="outline" className="h-12 px-4 text-destructive border-border">
           <RotateCcw size={18} />
         </Button>
       </div>
