@@ -1,0 +1,4 @@
+project_id = "qokdnmdxfkzrzhonbeob"
+
+[functions.parse-timetable]
+verify_jwt = false
