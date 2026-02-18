@@ -3,7 +3,8 @@ import { useTimetable, DayOfWeek, Lecture } from "@/hooks/useTimetable";
 import { AddLectureForm } from "@/components/AddLectureForm";
 import { LectureCard } from "@/components/LectureCard";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { BookOpen, Plus, ArrowRight, Sparkles, GripVertical } from "lucide-react";
+import { TimetableUpload } from "@/components/TimetableUpload";
+import { BookOpen, Plus, ArrowRight, Sparkles, GripVertical, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const DAYS: DayOfWeek[] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -15,6 +16,7 @@ interface TimetableSetupProps {
 export function TimetableSetup({ onDone }: TimetableSetupProps) {
   const { lectures, addLecture, deleteLecture, updateLecture, resetTimetable } = useTimetable();
   const [showForm, setShowForm] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
   const [activeDay, setActiveDay] = useState<DayOfWeek>("Monday");
 
   // Drag state
@@ -129,8 +131,21 @@ export function TimetableSetup({ onDone }: TimetableSetupProps) {
 
       {/* Content */}
       <div className="flex-1 px-4 py-4 space-y-3">
+        {/* Upload panel */}
+        {showUpload && !showForm && (
+          <div className="bg-card border rounded-xl p-4 shadow-sm">
+            <TimetableUpload
+              onImport={(entries) => {
+                entries.forEach((e) => addLecture(e));
+                setShowUpload(false);
+              }}
+              onClose={() => setShowUpload(false)}
+            />
+          </div>
+        )}
+
         {/* Form */}
-        {showForm && (
+        {showForm && !showUpload && (
           <div className="bg-card border rounded-xl p-4 shadow-sm">
             <AddLectureForm
               onAdd={(lecture) => { addLecture(lecture); setShowForm(false); }}
@@ -186,13 +201,22 @@ export function TimetableSetup({ onDone }: TimetableSetupProps) {
 
       {/* Bottom bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 py-3 space-y-2">
-        {!showForm && (
-          <Button
-            onClick={() => setShowForm(true)}
-            className="w-full h-12 gap-2 font-semibold text-base bg-primary text-primary-foreground"
-          >
-            <Plus size={18} /> Add Entry for {activeDay}
-          </Button>
+        {!showForm && !showUpload && (
+          <>
+            <Button
+              onClick={() => setShowForm(true)}
+              className="w-full h-12 gap-2 font-semibold text-base bg-primary text-primary-foreground"
+            >
+              <Plus size={18} /> Add Entry for {activeDay}
+            </Button>
+            <Button
+              onClick={() => setShowUpload(true)}
+              variant="outline"
+              className="w-full h-12 gap-2 font-semibold text-base border-border text-foreground"
+            >
+              <Upload size={16} /> Import from Photo / PDF
+            </Button>
+          </>
         )}
         {lectures.length > 0 && (
           <Button
