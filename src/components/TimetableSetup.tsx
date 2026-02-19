@@ -4,7 +4,7 @@ import { AddLectureForm } from "@/components/AddLectureForm";
 import { LectureCard } from "@/components/LectureCard";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { TimetableUpload } from "@/components/TimetableUpload";
-import { BookOpen, Plus, ArrowRight, Sparkles, GripVertical, Upload } from "lucide-react";
+import { BookOpen, Plus, ArrowRight, Sparkles, GripVertical, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const DAYS: DayOfWeek[] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -15,12 +15,13 @@ interface TimetableSetupProps {
 }
 
 export function TimetableSetup({ onDone, userId }: TimetableSetupProps) {
-  const { lectures, addLecture, deleteLecture, updateLecture, resetTimetable } = useTimetable(userId);
+  const { lectures, addLecture, deleteLecture, updateLecture } = useTimetable(userId);
   const [showForm, setShowForm] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
+  // Show the AI import panel by default on first load if no entries yet
+  const [firstLoadUpload, setFirstLoadUpload] = useState(lectures.length === 0);
   const [activeDay, setActiveDay] = useState<DayOfWeek>("Monday");
 
-  // Drag state
   const dragIndex = useRef<number | null>(null);
   const dragOverIndex = useRef<number | null>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -32,38 +33,23 @@ export function TimetableSetup({ onDone, userId }: TimetableSetupProps) {
       return toMins(a.startTime) - toMins(b.startTime);
     });
 
-  const handleDragStart = (index: number) => {
-    dragIndex.current = index;
-    setDragActive(true);
-  };
-
-  const handleDragEnter = (index: number) => {
-    dragOverIndex.current = index;
-  };
-
+  const handleDragStart = (index: number) => { dragIndex.current = index; setDragActive(true); };
+  const handleDragEnter = (index: number) => { dragOverIndex.current = index; };
   const handleDragEnd = () => {
     const from = dragIndex.current;
     const to = dragOverIndex.current;
-
     if (from !== null && to !== null && from !== to) {
-      // Swap start/end times between the two lectures to "reorder" them
       const moved = dayLectures[from];
       const target = dayLectures[to];
-
-      // Shift all times: simple swap of startTime/endTime between the two
       const movedDuration = calcDuration(moved);
       const targetDuration = calcDuration(target);
-
-      // Assign the target's startTime to moved, recalc end; and vice versa
       const newMovedStart = target.startTime;
       const newMovedEnd = addMinutes(newMovedStart, movedDuration);
       const newTargetStart = newMovedEnd;
       const newTargetEnd = addMinutes(newTargetStart, targetDuration);
-
       updateLecture(moved.id, { startTime: newMovedStart, endTime: newMovedEnd });
       updateLecture(target.id, { startTime: newTargetStart, endTime: newTargetEnd });
     }
-
     dragIndex.current = null;
     dragOverIndex.current = null;
     setDragActive(false);
@@ -78,10 +64,14 @@ export function TimetableSetup({ onDone, userId }: TimetableSetupProps) {
   function addMinutes(time: string, mins: number): string {
     const [h, m] = time.split(":").map(Number);
     const total = h * 60 + m + mins;
-    const rh = Math.floor(total / 60) % 24;
-    const rm = total % 60;
-    return `${String(rh).padStart(2, "0")}:${String(rm).padStart(2, "0")}`;
+    return `${String(Math.floor(total / 60) % 24).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
   }
+
+  const handleImport = (entries: Omit<Lecture, "id">[]) => {
+    entries.forEach((e) => addLecture(e));
+    setShowUpload(false);
+    setFirstLoadUpload(false);
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-background pb-28">
@@ -104,14 +94,48 @@ export function TimetableSetup({ onDone, userId }: TimetableSetupProps) {
           {lectures.length} {lectures.length === 1 ? "entry" : "entries"} added
         </span>
         {lectures.length > 0 && (
-          <button
-            onClick={onDone}
-            className="flex items-center gap-1 text-sm font-semibold text-primary"
-          >
+          <button onClick={onDone} className="flex items-center gap-1 text-sm font-semibold text-primary">
             View Dashboard <ArrowRight size={14} />
           </button>
         )}
       </div>
+
+      {/* ── First-load AI import hero ── */}
+      {firstLoadUpload && lectures.length === 0 && (
+        <div className="mx-4 mt-4 bg-card border-2 border-primary/30 rounded-2xl p-5 shadow-sm space-y-3">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-xl bg-primary/10">
+                <Sparkles size={20} className="text-primary" />
+              </div>
+              <div>
+                <p className="font-bold text-foreground text-base">Import with AI ✨</p>
+                <p className="text-xs text-muted-foreground">Upload your timetable photo or PDF</p>
+              </div>
+            </div>
+            <button onClick={() => setFirstLoadUpload(false)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground">
+              <X size={16} />
+            </button>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Got a screenshot or PDF of your college timetable? Our AI will read it and fill in all your lectures automatically.
+          </p>
+          <div className="flex flex-col gap-2">
+            <Button
+              onClick={() => { setShowUpload(true); setFirstLoadUpload(false); }}
+              className="w-full h-11 gap-2 font-semibold"
+            >
+              <Upload size={16} /> Upload Photo / PDF
+            </Button>
+            <button
+              onClick={() => setFirstLoadUpload(false)}
+              className="text-sm text-muted-foreground py-1"
+            >
+              I'll add manually instead
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Day tabs */}
       <div className="flex gap-1.5 px-4 py-3 overflow-x-auto no-scrollbar bg-background border-b border-border">
@@ -135,13 +159,7 @@ export function TimetableSetup({ onDone, userId }: TimetableSetupProps) {
         {/* Upload panel */}
         {showUpload && !showForm && (
           <div className="bg-card border rounded-xl p-4 shadow-sm">
-            <TimetableUpload
-              onImport={(entries) => {
-                entries.forEach((e) => addLecture(e));
-                setShowUpload(false);
-              }}
-              onClose={() => setShowUpload(false)}
-            />
+            <TimetableUpload onImport={handleImport} onClose={() => setShowUpload(false)} />
           </div>
         )}
 
@@ -163,8 +181,8 @@ export function TimetableSetup({ onDone, userId }: TimetableSetupProps) {
           </p>
         )}
 
-        {/* Lectures for day */}
-        {dayLectures.length === 0 && !showForm && (
+        {/* Empty state */}
+        {dayLectures.length === 0 && !showForm && !showUpload && !firstLoadUpload && (
           <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <Sparkles size={32} className="mb-3 opacity-30" />
             <p className="text-sm font-medium">No entries for {activeDay}</p>
@@ -184,7 +202,6 @@ export function TimetableSetup({ onDone, userId }: TimetableSetupProps) {
               dragActive && dragIndex.current === index ? "opacity-40" : "opacity-100"
             }`}
           >
-            {/* Drag handle */}
             <div className="flex items-center px-1 cursor-grab active:cursor-grabbing text-muted-foreground touch-none">
               <GripVertical size={18} />
             </div>
