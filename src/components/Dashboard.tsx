@@ -57,24 +57,24 @@ export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, userI
       {/* Header */}
       <div className="bg-primary text-primary-foreground px-4 pt-10 pb-6">
         <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm opacity-80">{getGreeting()} 👋</p>
-          <h1 className="text-2xl font-bold mt-0.5">Your Schedule</h1>
-          <div className="flex items-center gap-2 mt-2 opacity-80">
-            <Clock size={14} />
-            <span className="text-sm">{todayName} • {timeStr}</span>
+          <div>
+            <p className="text-sm opacity-80">{getGreeting()} 👋</p>
+            <h1 className="text-2xl font-bold mt-0.5">Your Schedule</h1>
+            <div className="flex items-center gap-2 mt-2 opacity-80">
+              <Clock size={14} />
+              <span className="text-sm">{todayName} • {timeStr}</span>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowNotifications(true)}
-            className="p-2 rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 transition-colors"
-            title="Notification Settings"
-          >
-            <Bell size={18} />
-          </button>
-          <ThemeToggle />
-        </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowNotifications(true)}
+              className="p-2 rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 transition-colors"
+              title="Notification Settings"
+            >
+              <Bell size={18} />
+            </button>
+            <ThemeToggle />
+          </div>
         </div>
       </div>
 
@@ -125,9 +125,18 @@ export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, userI
 
         {/* Today's full schedule */}
         <div>
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">
-            Today's Full Schedule
-          </p>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+              Today's Full Schedule
+            </p>
+            <button
+              onClick={onAddLecture}
+              className="flex items-center gap-1 text-xs font-semibold text-primary"
+            >
+              <Plus size={12} /> Add
+            </button>
+          </div>
+
           {todaySchedule.length === 0 ? (
             <div className="bg-card border rounded-xl p-6 text-center text-muted-foreground">
               <CalendarDays size={28} className="mx-auto mb-2 opacity-40" />
