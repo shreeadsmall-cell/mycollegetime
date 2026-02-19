@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useTimetable, ScheduleEntry } from "@/hooks/useTimetable";
 import { LectureCard } from "@/components/LectureCard";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Clock, CalendarDays, Plus, RotateCcw, Download } from "lucide-react";
+import { NotificationSettings } from "@/components/NotificationSettings";
+import { Clock, CalendarDays, Plus, RotateCcw, Download, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface DashboardProps {
@@ -28,8 +29,9 @@ function getGreeting() {
 }
 
 export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, userId }: DashboardProps) {
-  const { getTodaySchedule, getCurrentLecture, getUpcomingLectures, updateLecture, deleteLecture } = useTimetable(userId);
+  const { getTodaySchedule, getCurrentLecture, getUpcomingLectures, updateLecture, deleteLecture, lectures } = useTimetable(userId);
   const [now, setNow] = useState(new Date());
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 30000);
@@ -55,15 +57,24 @@ export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, userI
       {/* Header */}
       <div className="bg-primary text-primary-foreground px-4 pt-10 pb-6">
         <div className="flex items-start justify-between">
-          <div>
-            <p className="text-sm opacity-80">{getGreeting()} 👋</p>
-            <h1 className="text-2xl font-bold mt-0.5">Your Schedule</h1>
-            <div className="flex items-center gap-2 mt-2 opacity-80">
-              <Clock size={14} />
-              <span className="text-sm">{todayName} • {timeStr}</span>
-            </div>
+        <div>
+          <p className="text-sm opacity-80">{getGreeting()} 👋</p>
+          <h1 className="text-2xl font-bold mt-0.5">Your Schedule</h1>
+          <div className="flex items-center gap-2 mt-2 opacity-80">
+            <Clock size={14} />
+            <span className="text-sm">{todayName} • {timeStr}</span>
           </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowNotifications(true)}
+            className="p-2 rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 transition-colors"
+            title="Notification Settings"
+          >
+            <Bell size={18} />
+          </button>
           <ThemeToggle />
+        </div>
         </div>
       </div>
 
@@ -158,6 +169,19 @@ export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, userI
           <RotateCcw size={18} />
         </Button>
       </div>
+
+      {/* Notification Settings Modal */}
+      {showNotifications && (
+        <div className="fixed inset-0 z-50 flex items-end bg-foreground/40 backdrop-blur-sm">
+          <div className="w-full max-w-md mx-auto bg-card rounded-t-2xl shadow-2xl animate-in slide-in-from-bottom-4 duration-200">
+            <div className="w-10 h-1 bg-border rounded-full mx-auto mt-4" />
+            <NotificationSettings
+              lectures={lectures}
+              onClose={() => setShowNotifications(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
