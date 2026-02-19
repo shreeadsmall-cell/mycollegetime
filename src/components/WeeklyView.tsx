@@ -11,10 +11,11 @@ interface WeeklyViewProps {
   onAddLecture: () => void;
   onBack: () => void;
   onExport: () => void;
+  userId?: string | null;
 }
 
-export function WeeklyView({ onAddLecture, onBack, onExport }: WeeklyViewProps) {
-  const { getDaySchedule, updateLecture, deleteLecture } = useTimetable();
+export function WeeklyView({ onAddLecture, onBack, onExport, userId }: WeeklyViewProps) {
+  const { getDaySchedule, updateLecture, deleteLecture } = useTimetable(userId);
 
   const todayIndex = (() => {
     const d = new Date().getDay();

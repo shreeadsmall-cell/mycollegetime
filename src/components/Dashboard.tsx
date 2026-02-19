@@ -10,6 +10,7 @@ interface DashboardProps {
   onReset: () => void;
   onViewWeekly: () => void;
   onExport: () => void;
+  userId?: string | null;
 }
 
 function formatTime(t: string) {
@@ -26,8 +27,8 @@ function getGreeting() {
   return "Good evening";
 }
 
-export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport }: DashboardProps) {
-  const { getTodaySchedule, getCurrentLecture, getUpcomingLectures, updateLecture, deleteLecture } = useTimetable();
+export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, userId }: DashboardProps) {
+  const { getTodaySchedule, getCurrentLecture, getUpcomingLectures, updateLecture, deleteLecture } = useTimetable(userId);
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {

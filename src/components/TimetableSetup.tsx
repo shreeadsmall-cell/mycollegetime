@@ -11,10 +11,11 @@ const DAYS: DayOfWeek[] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday
 
 interface TimetableSetupProps {
   onDone: () => void;
+  userId?: string | null;
 }
 
-export function TimetableSetup({ onDone }: TimetableSetupProps) {
-  const { lectures, addLecture, deleteLecture, updateLecture, resetTimetable } = useTimetable();
+export function TimetableSetup({ onDone, userId }: TimetableSetupProps) {
+  const { lectures, addLecture, deleteLecture, updateLecture, resetTimetable } = useTimetable(userId);
   const [showForm, setShowForm] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [activeDay, setActiveDay] = useState<DayOfWeek>("Monday");
