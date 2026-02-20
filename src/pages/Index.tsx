@@ -7,14 +7,15 @@ import { WeeklyView } from "@/components/WeeklyView";
 import { AddLectureForm } from "@/components/AddLectureForm";
 import { ExportModal } from "@/components/ExportModal";
 import { AuthScreen } from "@/components/AuthScreen";
+import { AttendanceCalculator } from "@/components/AttendanceCalculator";
 import { ThemeProvider } from "next-themes";
 import { Loader2, Cloud, CloudOff, LogOut } from "lucide-react";
 
-type Screen = "setup" | "dashboard" | "weekly" | "add";
+type Screen = "setup" | "dashboard" | "weekly" | "add" | "attendance";
 
 const Index = () => {
   const { user, loading: authLoading, signOut } = useAuth();
-  const { hasSetup, addLecture, resetTimetable, syncing, synced } = useTimetable(user?.id);
+  const { hasSetup, addLecture, resetTimetable, syncing, synced, lectures } = useTimetable(user?.id);
   const [screen, setScreen] = useState<Screen>(hasSetup ? "dashboard" : "setup");
   const [showAddModal, setShowAddModal] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -100,6 +101,7 @@ const Index = () => {
               onReset={handleReset}
               onViewWeekly={() => setScreen("weekly")}
               onExport={() => setShowExport(true)}
+              onAttendance={() => setScreen("attendance")}
               userId={user?.id}
             />
           )}
@@ -109,6 +111,12 @@ const Index = () => {
               onBack={() => setScreen("dashboard")}
               onExport={() => setShowExport(true)}
               userId={user?.id}
+            />
+          )}
+          {screen === "attendance" && (
+            <AttendanceCalculator
+              onBack={() => setScreen("dashboard")}
+              timetableLectures={lectures}
             />
           )}
         </div>
