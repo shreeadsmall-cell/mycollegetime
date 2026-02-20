@@ -2,3 +2,6 @@ project_id = "qokdnmdxfkzrzhonbeob"
 
 [functions.parse-timetable]
 verify_jwt = false
+
+[functions.parse-attendance]
+verify_jwt = false
