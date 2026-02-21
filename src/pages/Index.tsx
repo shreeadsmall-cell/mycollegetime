@@ -8,6 +8,7 @@ import { AddLectureForm } from "@/components/AddLectureForm";
 import { ExportModal } from "@/components/ExportModal";
 import { AuthScreen } from "@/components/AuthScreen";
 import { AttendanceCalculator } from "@/components/AttendanceCalculator";
+import { OfflineBanner } from "@/components/OfflineBanner";
 import { ThemeProvider } from "next-themes";
 import { Loader2, Cloud, CloudOff, LogOut } from "lucide-react";
 
@@ -59,6 +60,9 @@ const Index = () => {
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
       <div className="max-w-md mx-auto relative">
+        {/* Offline Banner */}
+        <OfflineBanner />
+
         {/* Sync status bar */}
         {user && (
           <div className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-1.5 bg-primary/10 border-b border-primary/20 max-w-md mx-auto">

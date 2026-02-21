@@ -1,10 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTimetable, ScheduleEntry } from "@/hooks/useTimetable";
+import { useAds } from "@/hooks/useAds";
+import { useWebNotifications } from "@/hooks/useWebNotifications";
+import { useAdmin } from "@/hooks/useAdmin";
 import { LectureCard } from "@/components/LectureCard";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationSettings } from "@/components/NotificationSettings";
-import { Clock, CalendarDays, Plus, RotateCcw, Download, Bell, BarChart3 } from "lucide-react";
+import { AnnouncementBanner } from "@/components/AnnouncementBanner";
+import { AdPlayer } from "@/components/AdPlayer";
+import { Clock, CalendarDays, Plus, RotateCcw, Download, Bell, BarChart3, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 interface DashboardProps {
   onAddLecture: () => void;
@@ -31,12 +37,45 @@ function getGreeting() {
 
 export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, onAttendance, userId }: DashboardProps) {
   const { getTodaySchedule, getCurrentLecture, getUpcomingLectures, updateLecture, deleteLecture, lectures } = useTimetable(userId);
+  const { getNextAd, recordView } = useAds();
+  const { isAdmin } = useAdmin(userId);
+  const webNotif = useWebNotifications();
+  const navigate = useNavigate();
+
   const [now, setNow] = useState(new Date());
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showAd, setShowAd] = useState(false);
+  const [currentAd, setCurrentAd] = useState<ReturnType<typeof getNextAd>>(null);
 
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Schedule web notifications on load
+  useEffect(() => {
+    if (webNotif.permission === "granted" && lectures.length > 0) {
+      webNotif.scheduleReminders(lectures);
+    }
+  }, [lectures, webNotif.permission]);
+
+  // Request notification permission on first load
+  useEffect(() => {
+    if (webNotif.isSupported && webNotif.permission === "default") {
+      webNotif.requestPermission();
+    }
+  }, []);
+
+  // Show ad on dashboard open
+  useEffect(() => {
+    const ad = getNextAd();
+    if (ad) {
+      const timer = setTimeout(() => {
+        setCurrentAd(ad);
+        setShowAd(true);
+      }, ad.delay_seconds * 1000);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   const current = getCurrentLecture();
@@ -53,8 +92,18 @@ export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, onAtt
     return "default";
   };
 
+  const handleAdClose = useCallback(() => {
+    setShowAd(false);
+    setCurrentAd(null);
+  }, []);
+
   return (
     <div className="flex flex-col min-h-screen bg-background pb-24">
+      {/* Ad Player */}
+      {showAd && currentAd && (
+        <AdPlayer ad={currentAd} onClose={handleAdClose} onViewed={recordView} />
+      )}
+
       {/* Header */}
       <div className="bg-primary text-primary-foreground px-4 pt-10 pb-6">
         <div className="flex items-start justify-between">
@@ -67,17 +116,32 @@ export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, onAtt
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {isAdmin && (
+              <button
+                onClick={() => navigate("/admin")}
+                className="p-2 rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 transition-colors"
+                title="Admin Panel"
+              >
+                <Shield size={18} />
+              </button>
+            )}
             <button
               onClick={() => setShowNotifications(true)}
-              className="p-2 rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 transition-colors"
+              className="p-2 rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 transition-colors relative"
               title="Notification Settings"
             >
               <Bell size={18} />
+              {webNotif.permission === "granted" && webNotif.prefs.enabled && (
+                <span className="absolute top-1 right-1 w-2 h-2 bg-[hsl(var(--current))] rounded-full" />
+              )}
             </button>
             <ThemeToggle />
           </div>
         </div>
       </div>
+
+      {/* Announcement Banner */}
+      <AnnouncementBanner />
 
       <div className="flex-1 px-4 -mt-4 space-y-4">
         {/* Current Lecture */}
