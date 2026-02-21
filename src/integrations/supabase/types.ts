@@ -14,6 +14,111 @@ export type Database = {
   }
   public: {
     Tables: {
+      ads: {
+        Row: {
+          click_url: string | null
+          created_at: string
+          created_by: string
+          delay_seconds: number
+          duration_seconds: number
+          id: string
+          is_active: boolean
+          max_views_per_day: number
+          media_type: string
+          media_url: string
+          skip_after_seconds: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          click_url?: string | null
+          created_at?: string
+          created_by: string
+          delay_seconds?: number
+          duration_seconds?: number
+          id?: string
+          is_active?: boolean
+          max_views_per_day?: number
+          media_type?: string
+          media_url: string
+          skip_after_seconds?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          click_url?: string | null
+          created_at?: string
+          created_by?: string
+          delay_seconds?: number
+          duration_seconds?: number
+          id?: string
+          is_active?: boolean
+          max_views_per_day?: number
+          media_type?: string
+          media_url?: string
+          skip_after_seconds?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      announcements: {
+        Row: {
+          content: string | null
+          created_at: string
+          created_by: string
+          id: string
+          image_url: string | null
+          is_active: boolean
+          title: string
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          title: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          title?: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       timetable_entries: {
         Row: {
           created_at: string
@@ -50,15 +155,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -185,6 +314,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
