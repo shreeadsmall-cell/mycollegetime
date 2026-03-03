@@ -8,11 +8,12 @@ import { AddLectureForm } from "@/components/AddLectureForm";
 import { ExportModal } from "@/components/ExportModal";
 import { AuthScreen } from "@/components/AuthScreen";
 import { AttendanceCalculator } from "@/components/AttendanceCalculator";
+import { OcrExtractor } from "@/components/OcrExtractor";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { ThemeProvider } from "next-themes";
 import { Loader2, Cloud, CloudOff, LogOut } from "lucide-react";
 
-type Screen = "setup" | "dashboard" | "weekly" | "add" | "attendance";
+type Screen = "setup" | "dashboard" | "weekly" | "add" | "attendance" | "ocr";
 
 const Index = () => {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -105,7 +106,8 @@ const Index = () => {
               onReset={handleReset}
               onViewWeekly={() => setScreen("weekly")}
               onExport={() => setShowExport(true)}
-              onAttendance={() => setScreen("attendance")}
+          onAttendance={() => setScreen("attendance")}
+              onOcr={() => setScreen("ocr")}
               userId={user?.id}
             />
           )}
@@ -122,6 +124,9 @@ const Index = () => {
               onBack={() => setScreen("dashboard")}
               timetableLectures={lectures}
             />
+          )}
+          {screen === "ocr" && (
+            <OcrExtractor onBack={() => setScreen("dashboard")} />
           )}
         </div>
 
