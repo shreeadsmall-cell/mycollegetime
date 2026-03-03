@@ -6,9 +6,10 @@ interface AdPlayerProps {
   ad: Ad;
   onClose: () => void;
   onViewed: (adId: string) => void;
+  onTrackEvent?: (adId: string, event: string, duration?: number) => void;
 }
 
-export function AdPlayer({ ad, onClose, onViewed }: AdPlayerProps) {
+export function AdPlayer({ ad, onClose, onViewed, onTrackEvent }: AdPlayerProps) {
   const [countdown, setCountdown] = useState(ad.skip_after_seconds);
   const [canSkip, setCanSkip] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -16,7 +17,8 @@ export function AdPlayer({ ad, onClose, onViewed }: AdPlayerProps) {
 
   useEffect(() => {
     onViewed(ad.id);
-  }, [ad.id, onViewed]);
+    onTrackEvent?.(ad.id, "impression");
+  }, [ad.id, onViewed, onTrackEvent]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -24,6 +26,7 @@ export function AdPlayer({ ad, onClose, onViewed }: AdPlayerProps) {
         const next = e + 1;
         if (next >= ad.duration_seconds) {
           clearInterval(interval);
+          onTrackEvent?.(ad.id, "complete", next);
           onClose();
         }
         return next;
@@ -52,7 +55,7 @@ export function AdPlayer({ ad, onClose, onViewed }: AdPlayerProps) {
             </span>
           ) : (
             <button
-              onClick={onClose}
+              onClick={() => { onTrackEvent?.(ad.id, "skip", elapsed); onClose(); }}
               className="flex items-center gap-1 text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-colors"
             >
               Skip <X size={12} />
@@ -99,6 +102,7 @@ export function AdPlayer({ ad, onClose, onViewed }: AdPlayerProps) {
                 href={ad.click_url}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => onTrackEvent?.(ad.id, "click", elapsed)}
                 className="flex items-center gap-1 text-xs text-primary font-semibold"
               >
                 Learn more <ExternalLink size={12} />

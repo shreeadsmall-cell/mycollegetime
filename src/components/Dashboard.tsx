@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTimetable, ScheduleEntry } from "@/hooks/useTimetable";
 import { useAds } from "@/hooks/useAds";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import { useWebNotifications } from "@/hooks/useWebNotifications";
 import { useAdmin } from "@/hooks/useAdmin";
 import { LectureCard } from "@/components/LectureCard";
@@ -8,7 +9,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { AdPlayer } from "@/components/AdPlayer";
-import { Clock, CalendarDays, Plus, RotateCcw, Download, Bell, BarChart3, Shield, ScanText } from "lucide-react";
+import { Clock, CalendarDays, Plus, RotateCcw, Download, Bell, BarChart3, Shield, ScanText, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
@@ -19,6 +20,7 @@ interface DashboardProps {
   onExport: () => void;
   onAttendance: () => void;
   onOcr: () => void;
+  onPromote: () => void;
   userId?: string | null;
 }
 
@@ -36,10 +38,11 @@ function getGreeting() {
   return "Good evening";
 }
 
-export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, onAttendance, onOcr, userId }: DashboardProps) {
+export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, onAttendance, onOcr, onPromote, userId }: DashboardProps) {
   const { getTodaySchedule, getCurrentLecture, getUpcomingLectures, updateLecture, deleteLecture, lectures } = useTimetable(userId);
   const { getNextAd, recordView } = useAds();
   const { isAdmin } = useAdmin(userId);
+  const { trackAdEvent } = useAnalytics(userId);
   const webNotif = useWebNotifications();
   const navigate = useNavigate();
 
@@ -102,7 +105,7 @@ export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, onAtt
     <div className="flex flex-col min-h-screen bg-background pb-24">
       {/* Ad Player */}
       {showAd && currentAd && (
-        <AdPlayer ad={currentAd} onClose={handleAdClose} onViewed={recordView} />
+        <AdPlayer ad={currentAd} onClose={handleAdClose} onViewed={recordView} onTrackEvent={trackAdEvent} />
       )}
 
       {/* Header */}
@@ -239,6 +242,9 @@ export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, onAtt
         </Button>
         <Button onClick={onOcr} variant="outline" className="h-12 px-4 text-foreground border-border">
           <ScanText size={18} />
+        </Button>
+        <Button onClick={onPromote} variant="outline" className="h-12 px-4 text-foreground border-border">
+          <Sparkles size={18} />
         </Button>
         <Button onClick={onViewWeekly} variant="outline" className="h-12 px-4 text-foreground border-border">
           <CalendarDays size={18} />
