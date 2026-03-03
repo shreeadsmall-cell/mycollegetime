@@ -8,7 +8,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { AdPlayer } from "@/components/AdPlayer";
-import { Clock, CalendarDays, Plus, RotateCcw, Download, Bell, BarChart3, Shield } from "lucide-react";
+import { Clock, CalendarDays, Plus, RotateCcw, Download, Bell, BarChart3, Shield, ScanText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
@@ -18,6 +18,7 @@ interface DashboardProps {
   onViewWeekly: () => void;
   onExport: () => void;
   onAttendance: () => void;
+  onOcr: () => void;
   userId?: string | null;
 }
 
@@ -35,7 +36,7 @@ function getGreeting() {
   return "Good evening";
 }
 
-export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, onAttendance, userId }: DashboardProps) {
+export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, onAttendance, onOcr, userId }: DashboardProps) {
   const { getTodaySchedule, getCurrentLecture, getUpcomingLectures, updateLecture, deleteLecture, lectures } = useTimetable(userId);
   const { getNextAd, recordView } = useAds();
   const { isAdmin } = useAdmin(userId);
@@ -235,6 +236,9 @@ export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, onAtt
         </Button>
         <Button onClick={onAttendance} variant="outline" className="h-12 px-4 text-foreground border-border">
           <BarChart3 size={18} />
+        </Button>
+        <Button onClick={onOcr} variant="outline" className="h-12 px-4 text-foreground border-border">
+          <ScanText size={18} />
         </Button>
         <Button onClick={onViewWeekly} variant="outline" className="h-12 px-4 text-foreground border-border">
           <CalendarDays size={18} />
