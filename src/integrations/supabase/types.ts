@@ -14,49 +14,96 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_analytics: {
+        Row: {
+          ad_id: string
+          created_at: string
+          event_type: string
+          id: string
+          user_id: string | null
+          view_duration_seconds: number | null
+        }
+        Insert: {
+          ad_id: string
+          created_at?: string
+          event_type: string
+          id?: string
+          user_id?: string | null
+          view_duration_seconds?: number | null
+        }
+        Update: {
+          ad_id?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          user_id?: string | null
+          view_duration_seconds?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_analytics_ad_id_fkey"
+            columns: ["ad_id"]
+            isOneToOne: false
+            referencedRelation: "ads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ads: {
         Row: {
+          approval_status: string | null
           click_url: string | null
+          clicks: number | null
           created_at: string
           created_by: string
           delay_seconds: number
           duration_seconds: number
           id: string
+          impressions: number | null
           is_active: boolean
           max_views_per_day: number
           media_type: string
           media_url: string
           skip_after_seconds: number
+          submitted_by: string | null
           title: string
           updated_at: string
         }
         Insert: {
+          approval_status?: string | null
           click_url?: string | null
+          clicks?: number | null
           created_at?: string
           created_by: string
           delay_seconds?: number
           duration_seconds?: number
           id?: string
+          impressions?: number | null
           is_active?: boolean
           max_views_per_day?: number
           media_type?: string
           media_url: string
           skip_after_seconds?: number
+          submitted_by?: string | null
           title: string
           updated_at?: string
         }
         Update: {
+          approval_status?: string | null
           click_url?: string | null
+          clicks?: number | null
           created_at?: string
           created_by?: string
           delay_seconds?: number
           duration_seconds?: number
           id?: string
+          impressions?: number | null
           is_active?: boolean
           max_views_per_day?: number
           media_type?: string
           media_url?: string
           skip_after_seconds?: number
+          submitted_by?: string | null
           title?: string
           updated_at?: string
         }
@@ -98,6 +145,69 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_usage: {
+        Row: {
+          feature_name: string
+          id: string
+          used_at: string
+          user_id: string
+        }
+        Insert: {
+          feature_name: string
+          id?: string
+          used_at?: string
+          user_id: string
+        }
+        Update: {
+          feature_name?: string
+          id?: string
+          used_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      page_visits: {
+        Row: {
+          id: string
+          page_name: string
+          user_id: string
+          visited_at: string
+        }
+        Insert: {
+          id?: string
+          page_name: string
+          user_id: string
+          visited_at?: string
+        }
+        Update: {
+          id?: string
+          page_name?: string
+          user_id?: string
+          visited_at?: string
+        }
+        Relationships: []
+      }
+      platform_config: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -118,6 +228,117 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      promotions: {
+        Row: {
+          admin_notes: string | null
+          approved_at: string | null
+          budget: number
+          cost_per_1000_impressions: number | null
+          cost_per_day: number | null
+          created_at: string
+          description: string | null
+          duration_days: number
+          expires_at: string | null
+          id: string
+          is_featured: boolean | null
+          media_type: string
+          media_url: string
+          starts_at: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          approved_at?: string | null
+          budget?: number
+          cost_per_1000_impressions?: number | null
+          cost_per_day?: number | null
+          created_at?: string
+          description?: string | null
+          duration_days?: number
+          expires_at?: string | null
+          id?: string
+          is_featured?: boolean | null
+          media_type?: string
+          media_url: string
+          starts_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          approved_at?: string | null
+          budget?: number
+          cost_per_1000_impressions?: number | null
+          cost_per_day?: number | null
+          created_at?: string
+          description?: string | null
+          duration_days?: number
+          expires_at?: string | null
+          id?: string
+          is_featured?: boolean | null
+          media_type?: string
+          media_url?: string
+          starts_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      revenue_records: {
+        Row: {
+          ad_id: string | null
+          amount: number
+          created_by: string
+          description: string | null
+          id: string
+          promotion_id: string | null
+          recorded_at: string
+          type: string
+        }
+        Insert: {
+          ad_id?: string | null
+          amount?: number
+          created_by: string
+          description?: string | null
+          id?: string
+          promotion_id?: string | null
+          recorded_at?: string
+          type?: string
+        }
+        Update: {
+          ad_id?: string | null
+          amount?: number
+          created_by?: string
+          description?: string | null
+          id?: string
+          promotion_id?: string | null
+          recorded_at?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revenue_records_ad_id_fkey"
+            columns: ["ad_id"]
+            isOneToOne: false
+            referencedRelation: "ads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_records_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       timetable_entries: {
         Row: {
@@ -169,6 +390,30 @@ export type Database = {
         Update: {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_sessions: {
+        Row: {
+          duration_seconds: number | null
+          ended_at: string | null
+          id: string
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          duration_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          duration_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          started_at?: string
           user_id?: string
         }
         Relationships: []
