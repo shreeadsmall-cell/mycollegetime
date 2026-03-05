@@ -77,7 +77,7 @@ export function PromotionSubmit({ onBack, userId }: PromotionSubmitProps) {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background pb-6">
+    <div className="flex flex-col min-h-screen bg-background pb-24">
       <div className="bg-primary text-primary-foreground px-4 pt-10 pb-6">
         <div className="flex items-center gap-3">
           <button onClick={onBack} className="p-2 rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20">

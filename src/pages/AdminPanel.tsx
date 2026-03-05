@@ -56,7 +56,7 @@ export default function AdminPanel() {
   ];
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen bg-background pb-8">
       <div className="bg-primary text-primary-foreground px-4 pt-10 pb-5">
         <div className="flex items-center gap-3 mb-3">
           <button onClick={() => navigate("/")} className="p-2 -ml-2 rounded-lg hover:bg-primary-foreground/10">

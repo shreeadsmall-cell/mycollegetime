@@ -229,32 +229,44 @@ export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, onAtt
         </div>
       </div>
 
-      {/* Bottom action bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 py-3 flex gap-2">
-        <Button
-          onClick={onAddLecture}
-          className="flex-1 h-12 gap-2 font-semibold text-base bg-primary text-primary-foreground"
-        >
-          <Plus size={18} /> Add Lecture
-        </Button>
-        <Button onClick={onAttendance} variant="outline" className="h-12 px-4 text-foreground border-border">
-          <BarChart3 size={18} />
-        </Button>
-        <Button onClick={onOcr} variant="outline" className="h-12 px-4 text-foreground border-border">
-          <ScanText size={18} />
-        </Button>
-        <Button onClick={onPromote} variant="outline" className="h-12 px-4 text-foreground border-border">
-          <Sparkles size={18} />
-        </Button>
-        <Button onClick={onViewWeekly} variant="outline" className="h-12 px-4 text-foreground border-border">
-          <CalendarDays size={18} />
-        </Button>
-        <Button onClick={onExport} variant="outline" className="h-12 px-4 text-foreground border-border">
-          <Download size={18} />
-        </Button>
-        <Button onClick={onReset} variant="outline" className="h-12 px-4 text-destructive border-border">
-          <RotateCcw size={18} />
-        </Button>
+      {/* Bottom navigation bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border max-w-md mx-auto">
+        {/* Primary action */}
+        <div className="px-4 pt-2">
+          <Button
+            onClick={onAddLecture}
+            className="w-full h-11 gap-2 font-semibold text-sm bg-primary text-primary-foreground"
+          >
+            <Plus size={16} /> Add Lecture
+          </Button>
+        </div>
+        {/* Icon nav row */}
+        <div className="grid grid-cols-6 px-2 py-1.5">
+          <button onClick={onViewWeekly} className="flex flex-col items-center gap-0.5 py-1.5 text-muted-foreground hover:text-primary transition-colors">
+            <CalendarDays size={18} />
+            <span className="text-[10px]">Weekly</span>
+          </button>
+          <button onClick={onAttendance} className="flex flex-col items-center gap-0.5 py-1.5 text-muted-foreground hover:text-primary transition-colors">
+            <BarChart3 size={18} />
+            <span className="text-[10px]">Attend</span>
+          </button>
+          <button onClick={onOcr} className="flex flex-col items-center gap-0.5 py-1.5 text-muted-foreground hover:text-primary transition-colors">
+            <ScanText size={18} />
+            <span className="text-[10px]">OCR</span>
+          </button>
+          <button onClick={onPromote} className="flex flex-col items-center gap-0.5 py-1.5 text-muted-foreground hover:text-primary transition-colors">
+            <Sparkles size={18} />
+            <span className="text-[10px]">Promote</span>
+          </button>
+          <button onClick={onExport} className="flex flex-col items-center gap-0.5 py-1.5 text-muted-foreground hover:text-primary transition-colors">
+            <Download size={18} />
+            <span className="text-[10px]">Export</span>
+          </button>
+          <button onClick={onReset} className="flex flex-col items-center gap-0.5 py-1.5 text-destructive/70 hover:text-destructive transition-colors">
+            <RotateCcw size={18} />
+            <span className="text-[10px]">Reset</span>
+          </button>
+        </div>
       </div>
 
       {/* Notification Settings Modal */}
