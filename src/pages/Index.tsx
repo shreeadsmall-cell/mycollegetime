@@ -9,14 +9,13 @@ import { AddLectureForm } from "@/components/AddLectureForm";
 import { ExportModal } from "@/components/ExportModal";
 import { AuthScreen } from "@/components/AuthScreen";
 import { AttendanceCalculator } from "@/components/AttendanceCalculator";
-import { OcrExtractor } from "@/components/OcrExtractor";
 import { PromotionSubmit } from "@/components/PromotionSubmit";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { FloatingAdminButton } from "@/components/FloatingAdminButton";
 import { ThemeProvider } from "next-themes";
 import { Loader2, Cloud, CloudOff, LogOut } from "lucide-react";
 
-type Screen = "setup" | "dashboard" | "weekly" | "add" | "attendance" | "ocr" | "promote";
+type Screen = "setup" | "dashboard" | "weekly" | "add" | "attendance" | "promote";
 
 const Index = () => {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -28,7 +27,6 @@ const Index = () => {
   const [showExport, setShowExport] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
 
-  // Track page visits
   useEffect(() => {
     trackPage(screen);
   }, [screen, trackPage]);
@@ -116,9 +114,9 @@ const Index = () => {
               onViewWeekly={() => navigateTo("weekly")}
               onExport={() => setShowExport(true)}
               onAttendance={() => navigateTo("attendance")}
-              onOcr={() => navigateTo("ocr")}
               onPromote={() => navigateTo("promote")}
               userId={user?.id}
+              activeScreen={screen}
             />
           )}
           {screen === "weekly" && (
@@ -131,9 +129,6 @@ const Index = () => {
           )}
           {screen === "attendance" && (
             <AttendanceCalculator onBack={() => navigateTo("dashboard")} timetableLectures={lectures} />
-          )}
-          {screen === "ocr" && (
-            <OcrExtractor onBack={() => navigateTo("dashboard")} />
           )}
           {screen === "promote" && user && (
             <PromotionSubmit onBack={() => navigateTo("dashboard")} userId={user.id} />
@@ -173,7 +168,6 @@ const Index = () => {
 
         {showExport && <ExportModal onClose={() => setShowExport(false)} userId={user?.id} />}
 
-        {/* Floating admin button */}
         <FloatingAdminButton />
       </div>
     </ThemeProvider>
