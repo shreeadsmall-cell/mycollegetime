@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useTimetable, ScheduleEntry } from "@/hooks/useTimetable";
 import { useAds } from "@/hooks/useAds";
 import { useAnalytics } from "@/hooks/useAnalytics";
@@ -9,9 +9,10 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { AdPlayer } from "@/components/AdPlayer";
-import { Clock, CalendarDays, Plus, RotateCcw, Download, Bell, BarChart3, Shield, ScanText, Sparkles } from "lucide-react";
+import { Clock, CalendarDays, Plus, RotateCcw, Download, Bell, BarChart3, Shield, Sparkles, RefreshCw, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface DashboardProps {
   onAddLecture: () => void;
@@ -19,9 +20,9 @@ interface DashboardProps {
   onViewWeekly: () => void;
   onExport: () => void;
   onAttendance: () => void;
-  onOcr: () => void;
   onPromote: () => void;
   userId?: string | null;
+  activeScreen?: string;
 }
 
 function formatTime(t: string) {
@@ -38,7 +39,7 @@ function getGreeting() {
   return "Good evening";
 }
 
-export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, onAttendance, onOcr, onPromote, userId }: DashboardProps) {
+export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, onAttendance, onPromote, userId, activeScreen }: DashboardProps) {
   const { getTodaySchedule, getCurrentLecture, getUpcomingLectures, updateLecture, deleteLecture, lectures } = useTimetable(userId);
   const { getNextAd, recordView } = useAds();
   const { isAdmin } = useAdmin(userId);
@@ -50,27 +51,31 @@ export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, onAtt
   const [showNotifications, setShowNotifications] = useState(false);
   const [showAd, setShowAd] = useState(false);
   const [currentAd, setCurrentAd] = useState<ReturnType<typeof getNextAd>>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const touchStartY = useRef(0);
+  const isPulling = useRef(false);
+
+  const PULL_THRESHOLD = 80;
 
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(interval);
   }, []);
 
-  // Schedule web notifications on load
   useEffect(() => {
     if (webNotif.permission === "granted" && lectures.length > 0) {
       webNotif.scheduleReminders(lectures);
     }
   }, [lectures, webNotif.permission]);
 
-  // Request notification permission on first load
   useEffect(() => {
     if (webNotif.isSupported && webNotif.permission === "default") {
       webNotif.requestPermission();
     }
   }, []);
 
-  // Show ad on dashboard open
   useEffect(() => {
     const ad = getNextAd();
     if (ad) {
@@ -81,6 +86,41 @@ export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, onAtt
       return () => clearTimeout(timer);
     }
   }, []);
+
+  // Pull-to-refresh handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const el = scrollRef.current;
+    if (el && el.scrollTop <= 0) {
+      touchStartY.current = e.touches[0].clientY;
+      isPulling.current = true;
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isPulling.current || isRefreshing) return;
+    const diff = e.touches[0].clientY - touchStartY.current;
+    if (diff > 0) {
+      setPullDistance(Math.min(diff * 0.5, 120));
+    }
+  }, [isRefreshing]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (!isPulling.current) return;
+    isPulling.current = false;
+    if (pullDistance >= PULL_THRESHOLD && !isRefreshing) {
+      setIsRefreshing(true);
+      setPullDistance(PULL_THRESHOLD);
+      // Simulate refresh
+      setNow(new Date());
+      setTimeout(() => {
+        setIsRefreshing(false);
+        setPullDistance(0);
+        toast.success("Schedule refreshed");
+      }, 800);
+    } else {
+      setPullDistance(0);
+    }
+  }, [pullDistance, isRefreshing]);
 
   const current = getCurrentLecture();
   const upcoming = getUpcomingLectures();
@@ -101,8 +141,36 @@ export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, onAtt
     setCurrentAd(null);
   }, []);
 
+  const navItems = [
+    { key: "dashboard", label: "Home", icon: Home, onClick: () => {}, isActive: activeScreen === "dashboard" },
+    { key: "weekly", label: "Weekly", icon: CalendarDays, onClick: onViewWeekly, isActive: false },
+    { key: "attendance", label: "Attend", icon: BarChart3, onClick: onAttendance, isActive: false },
+    { key: "promote", label: "Promote", icon: Sparkles, onClick: onPromote, isActive: false },
+    { key: "export", label: "Export", icon: Download, onClick: onExport, isActive: false },
+  ];
+
   return (
-    <div className="flex flex-col min-h-screen bg-background pb-24">
+    <div
+      ref={scrollRef}
+      className="flex flex-col min-h-screen bg-background pb-36"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Pull-to-refresh indicator */}
+      {pullDistance > 0 && (
+        <div
+          className="flex items-center justify-center transition-all duration-150"
+          style={{ height: pullDistance }}
+        >
+          <RefreshCw
+            size={22}
+            className={`text-primary transition-transform ${isRefreshing ? "animate-spin" : ""}`}
+            style={{ transform: `rotate(${Math.min(pullDistance / PULL_THRESHOLD, 1) * 360}deg)` }}
+          />
+        </div>
+      )}
+
       {/* Ad Player */}
       {showAd && currentAd && (
         <AdPlayer ad={currentAd} onClose={handleAdClose} onViewed={recordView} onTrackEvent={trackAdEvent} />
@@ -229,43 +297,40 @@ export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, onAtt
         </div>
       </div>
 
-      {/* Bottom navigation bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border max-w-md mx-auto">
+      {/* Sticky bottom navigation bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur-md border-t border-border max-w-md mx-auto shadow-[0_-2px_10px_hsl(var(--foreground)/0.05)]">
         {/* Primary action */}
         <div className="px-4 pt-2">
           <Button
             onClick={onAddLecture}
-            className="w-full h-11 gap-2 font-semibold text-sm bg-primary text-primary-foreground"
+            className="w-full h-10 gap-2 font-semibold text-sm bg-primary text-primary-foreground"
           >
             <Plus size={16} /> Add Lecture
           </Button>
         </div>
-        {/* Icon nav row */}
-        <div className="grid grid-cols-6 px-2 py-1.5">
-          <button onClick={onViewWeekly} className="flex flex-col items-center gap-0.5 py-1.5 text-muted-foreground hover:text-primary transition-colors">
-            <CalendarDays size={18} />
-            <span className="text-[10px]">Weekly</span>
-          </button>
-          <button onClick={onAttendance} className="flex flex-col items-center gap-0.5 py-1.5 text-muted-foreground hover:text-primary transition-colors">
-            <BarChart3 size={18} />
-            <span className="text-[10px]">Attend</span>
-          </button>
-          <button onClick={onOcr} className="flex flex-col items-center gap-0.5 py-1.5 text-muted-foreground hover:text-primary transition-colors">
-            <ScanText size={18} />
-            <span className="text-[10px]">OCR</span>
-          </button>
-          <button onClick={onPromote} className="flex flex-col items-center gap-0.5 py-1.5 text-muted-foreground hover:text-primary transition-colors">
-            <Sparkles size={18} />
-            <span className="text-[10px]">Promote</span>
-          </button>
-          <button onClick={onExport} className="flex flex-col items-center gap-0.5 py-1.5 text-muted-foreground hover:text-primary transition-colors">
-            <Download size={18} />
-            <span className="text-[10px]">Export</span>
-          </button>
-          <button onClick={onReset} className="flex flex-col items-center gap-0.5 py-1.5 text-destructive/70 hover:text-destructive transition-colors">
-            <RotateCcw size={18} />
-            <span className="text-[10px]">Reset</span>
-          </button>
+        {/* Icon nav row with active indicator */}
+        <div className="grid grid-cols-5 px-2 pb-[env(safe-area-inset-bottom,8px)] pt-1">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = item.isActive;
+            return (
+              <button
+                key={item.key}
+                onClick={item.onClick}
+                className={`relative flex flex-col items-center gap-0.5 py-1.5 transition-colors ${
+                  isActive
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-primary"
+                }`}
+              >
+                {isActive && (
+                  <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-primary" />
+                )}
+                <Icon size={18} />
+                <span className={`text-[10px] ${isActive ? "font-semibold" : ""}`}>{item.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
