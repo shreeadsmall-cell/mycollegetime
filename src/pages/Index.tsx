@@ -6,16 +6,16 @@ import { TimetableSetup } from "@/components/TimetableSetup";
 import { Dashboard } from "@/components/Dashboard";
 import { WeeklyView } from "@/components/WeeklyView";
 import { AddLectureForm } from "@/components/AddLectureForm";
-import { ExportModal } from "@/components/ExportModal";
 import { AuthScreen } from "@/components/AuthScreen";
 import { AttendanceCalculator } from "@/components/AttendanceCalculator";
 import { PromotionSubmit } from "@/components/PromotionSubmit";
+import { BunkPlanner } from "@/components/BunkPlanner";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { FloatingAdminButton } from "@/components/FloatingAdminButton";
 import { ThemeProvider } from "next-themes";
 import { Loader2, Cloud, CloudOff, LogOut } from "lucide-react";
 
-type Screen = "setup" | "dashboard" | "weekly" | "add" | "attendance" | "promote";
+type Screen = "setup" | "dashboard" | "weekly" | "add" | "attendance" | "promote" | "bunk";
 
 const Index = () => {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -24,7 +24,6 @@ const Index = () => {
   const [screen, setScreen] = useState<Screen>(hasSetup ? "dashboard" : "setup");
   const [showAddModal, setShowAddModal] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [showExport, setShowExport] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
 
   useEffect(() => {
@@ -112,7 +111,7 @@ const Index = () => {
               onAddLecture={() => setShowAddModal(true)}
               onReset={handleReset}
               onViewWeekly={() => navigateTo("weekly")}
-              onExport={() => setShowExport(true)}
+              onBunkPlanner={() => navigateTo("bunk")}
               onAttendance={() => navigateTo("attendance")}
               onPromote={() => navigateTo("promote")}
               userId={user?.id}
@@ -123,7 +122,6 @@ const Index = () => {
             <WeeklyView
               onAddLecture={() => setShowAddModal(true)}
               onBack={() => navigateTo("dashboard")}
-              onExport={() => setShowExport(true)}
               userId={user?.id}
             />
           )}
@@ -132,6 +130,9 @@ const Index = () => {
           )}
           {screen === "promote" && user && (
             <PromotionSubmit onBack={() => navigateTo("dashboard")} userId={user.id} />
+          )}
+          {screen === "bunk" && (
+            <BunkPlanner onBack={() => navigateTo("dashboard")} userId={user?.id} />
           )}
         </div>
 
@@ -165,8 +166,6 @@ const Index = () => {
             </div>
           </div>
         )}
-
-        {showExport && <ExportModal onClose={() => setShowExport(false)} userId={user?.id} />}
 
         <FloatingAdminButton />
       </div>

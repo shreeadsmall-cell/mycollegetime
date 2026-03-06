@@ -1,16 +1,19 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useTimetable, ScheduleEntry } from "@/hooks/useTimetable";
+import { useAttendance } from "@/hooks/useAttendance";
 import { useAds } from "@/hooks/useAds";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { useWebNotifications } from "@/hooks/useWebNotifications";
 import { useAdmin } from "@/hooks/useAdmin";
+import { useBunkInsight } from "@/components/BunkPlanner";
 import { LectureCard } from "@/components/LectureCard";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { AdPlayer } from "@/components/AdPlayer";
-import { Clock, CalendarDays, Plus, RotateCcw, Download, Bell, BarChart3, Shield, Sparkles, RefreshCw, Home } from "lucide-react";
+import { Clock, CalendarDays, Plus, RotateCcw, Bell, BarChart3, Shield, Sparkles, RefreshCw, Home, CalendarClock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -18,7 +21,7 @@ interface DashboardProps {
   onAddLecture: () => void;
   onReset: () => void;
   onViewWeekly: () => void;
-  onExport: () => void;
+  onBunkPlanner: () => void;
   onAttendance: () => void;
   onPromote: () => void;
   userId?: string | null;
@@ -39,13 +42,16 @@ function getGreeting() {
   return "Good evening";
 }
 
-export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, onAttendance, onPromote, userId, activeScreen }: DashboardProps) {
+export function Dashboard({ onAddLecture, onReset, onViewWeekly, onBunkPlanner, onAttendance, onPromote, userId, activeScreen }: DashboardProps) {
   const { getTodaySchedule, getCurrentLecture, getUpcomingLectures, updateLecture, deleteLecture, lectures } = useTimetable(userId);
+  const { data: attendanceData, hasData: hasAttendance } = useAttendance();
   const { getNextAd, recordView } = useAds();
   const { isAdmin } = useAdmin(userId);
   const { trackAdEvent } = useAnalytics(userId);
   const webNotif = useWebNotifications();
   const navigate = useNavigate();
+
+  const safeBunks = useBunkInsight(attendanceData.subjects, lectures, attendanceData.requiredPercentage);
 
   const [now, setNow] = useState(new Date());
   const [showNotifications, setShowNotifications] = useState(false);
@@ -87,7 +93,6 @@ export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, onAtt
     }
   }, []);
 
-  // Pull-to-refresh handlers
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const el = scrollRef.current;
     if (el && el.scrollTop <= 0) {
@@ -110,7 +115,6 @@ export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, onAtt
     if (pullDistance >= PULL_THRESHOLD && !isRefreshing) {
       setIsRefreshing(true);
       setPullDistance(PULL_THRESHOLD);
-      // Simulate refresh
       setNow(new Date());
       setTimeout(() => {
         setIsRefreshing(false);
@@ -145,8 +149,8 @@ export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, onAtt
     { key: "dashboard", label: "Home", icon: Home, onClick: () => {}, isActive: activeScreen === "dashboard" },
     { key: "weekly", label: "Weekly", icon: CalendarDays, onClick: onViewWeekly, isActive: false },
     { key: "attendance", label: "Attend", icon: BarChart3, onClick: onAttendance, isActive: false },
+    { key: "bunk", label: "Bunk", icon: CalendarClock, onClick: onBunkPlanner, isActive: false },
     { key: "promote", label: "Promote", icon: Sparkles, onClick: onPromote, isActive: false },
-    { key: "export", label: "Export", icon: Download, onClick: onExport, isActive: false },
   ];
 
   return (
@@ -216,6 +220,23 @@ export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, onAtt
       <AnnouncementBanner />
 
       <div className="flex-1 px-4 -mt-4 space-y-4">
+        {/* Bunk insight card */}
+        {hasAttendance && (
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={onBunkPlanner}>
+            <CardContent className="p-3 flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <CalendarClock size={18} className="text-primary" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-foreground">
+                  Safe bunks today: {safeBunks}
+                </p>
+                <p className="text-xs text-muted-foreground">Tap to open Bunk Planner</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Current Lecture */}
         <div>
           {current ? (
@@ -299,7 +320,6 @@ export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, onAtt
 
       {/* Sticky bottom navigation bar */}
       <div className="fixed bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur-md border-t border-border max-w-md mx-auto shadow-[0_-2px_10px_hsl(var(--foreground)/0.05)]">
-        {/* Primary action */}
         <div className="px-4 pt-2">
           <Button
             onClick={onAddLecture}
@@ -308,7 +328,6 @@ export function Dashboard({ onAddLecture, onReset, onViewWeekly, onExport, onAtt
             <Plus size={16} /> Add Lecture
           </Button>
         </div>
-        {/* Icon nav row with active indicator */}
         <div className="grid grid-cols-5 px-2 pb-[env(safe-area-inset-bottom,8px)] pt-1">
           {navItems.map((item) => {
             const Icon = item.icon;
