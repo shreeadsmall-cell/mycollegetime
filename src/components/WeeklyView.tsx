@@ -32,16 +32,16 @@ export function WeeklyView({ onAddLecture, onBack, userId }: WeeklyViewProps) {
     <div className="flex flex-col min-h-screen bg-background pb-24">
       <div className="bg-primary text-primary-foreground px-4 pt-10 pb-5">
         <div className="flex items-center justify-between gap-3 mb-4">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-2 rounded-lg bg-primary-foreground/10 text-primary-foreground">
+          <div className="flex items-center gap-3 min-w-0">
+            <button onClick={onBack} className="p-2 rounded-lg bg-primary-foreground/10 text-primary-foreground shrink-0">
               <ChevronLeft size={20} />
             </button>
-            <h1 className="text-xl font-bold">Weekly Timetable</h1>
+            <h1 className="text-xl font-bold truncate">Weekly Timetable</h1>
           </div>
           <ThemeToggle />
         </div>
         <div className="flex items-center justify-between">
-          <button onClick={prev} className="p-2 rounded-lg bg-primary-foreground/10 text-primary-foreground">
+          <button onClick={prev} className="p-2 rounded-lg bg-primary-foreground/10 text-primary-foreground shrink-0">
             <ChevronLeft size={18} />
           </button>
           <div className="text-center">
@@ -50,7 +50,7 @@ export function WeeklyView({ onAddLecture, onBack, userId }: WeeklyViewProps) {
               <span className="text-xs bg-primary-foreground/20 px-2 py-0.5 rounded-full">Today</span>
             )}
           </div>
-          <button onClick={next} className="p-2 rounded-lg bg-primary-foreground/10 text-primary-foreground">
+          <button onClick={next} className="p-2 rounded-lg bg-primary-foreground/10 text-primary-foreground shrink-0">
             <ChevronRight size={18} />
           </button>
         </div>
@@ -61,7 +61,7 @@ export function WeeklyView({ onAddLecture, onBack, userId }: WeeklyViewProps) {
           <button
             key={day}
             onClick={() => setSelectedDayIndex(i)}
-            className={`shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+            className={`shrink-0 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors ${
               i === selectedDayIndex
                 ? "bg-primary text-primary-foreground"
                 : i === todayIndex
@@ -95,11 +95,11 @@ export function WeeklyView({ onAddLecture, onBack, userId }: WeeklyViewProps) {
         )}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 py-3 flex gap-2">
-        <Button onClick={onAddLecture} className="flex-1 h-12 gap-2 font-semibold text-base bg-primary text-primary-foreground">
+      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 py-3 flex gap-2 max-w-md mx-auto">
+        <Button onClick={onAddLecture} className="flex-1 h-12 gap-2 font-semibold text-sm sm:text-base bg-primary text-primary-foreground">
           <Plus size={18} /> Add Lecture
         </Button>
-        <Button onClick={onBack} variant="outline" className="h-12 px-4 text-foreground border-border">
+        <Button onClick={onBack} variant="outline" className="h-12 px-4 text-foreground border-border shrink-0">
           <LayoutDashboard size={18} />
         </Button>
       </div>
