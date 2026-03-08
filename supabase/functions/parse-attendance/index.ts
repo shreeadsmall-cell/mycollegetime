@@ -12,9 +12,9 @@ serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY is not configured");
     }
 
     const formData = await req.formData();
@@ -27,20 +27,17 @@ serve(async (req) => {
       });
     }
 
-    const mimeType = file.type;
     const arrayBuffer = await file.arrayBuffer();
     const uint8 = new Uint8Array(arrayBuffer);
-
     let binary = "";
     for (let i = 0; i < uint8.byteLength; i++) {
       binary += String.fromCharCode(uint8[i]);
     }
     const base64Data = btoa(binary);
 
-    const messages = [
-      {
-        role: "system",
-        content: `You are an attendance report extraction assistant. Extract attendance data from the provided image or PDF.
+    const mimeType = file.type || "image/jpeg";
+
+    const systemPrompt = `You are an attendance report extraction assistant. Extract attendance data from the provided image or PDF.
 
 Return ONLY a valid JSON array with objects following this exact structure:
 [
@@ -59,66 +56,51 @@ Rules:
 - percentage: Current attendance percentage (number with up to 1 decimal)
 - If percentage is not shown, calculate it as (attendedLectures / totalLectures) * 100
 - Include ALL subjects visible in the report
-- Return ONLY the JSON array, no markdown, no explanation, no code blocks`,
-      },
-      {
-        role: "user",
-        content: [
-          {
-            type: "image_url",
-            image_url: {
-              url: `data:${mimeType};base64,${base64Data}`,
-            },
-          },
-          {
-            type: "text",
-            text: "Extract all attendance data from this report. Return only the JSON array.",
-          },
-        ],
-      },
-    ];
+- Return ONLY the JSON array, no markdown, no explanation, no code blocks`;
 
     const response = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages,
-          max_tokens: 8000,
+          contents: [
+            {
+              parts: [
+                { text: systemPrompt },
+                {
+                  inline_data: {
+                    mime_type: mimeType,
+                    data: base64Data,
+                  },
+                },
+                { text: "Extract all attendance data from this report. Return only the JSON array." },
+              ],
+            },
+          ],
+          generationConfig: {
+            maxOutputTokens: 8000,
+          },
         }),
       }
     );
 
     if (!response.ok) {
+      const errText = await response.text();
+      console.error("Gemini API error:", response.status, errText);
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI usage limit reached. Please add credits." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      const errText = await response.text();
-      console.error("AI gateway error:", response.status, errText);
-      throw new Error(`AI gateway error: ${response.status}`);
+      throw new Error(`Gemini API error: ${response.status}`);
     }
 
     const aiResult = await response.json();
-    const rawContent = aiResult.choices?.[0]?.message?.content ?? "";
+    const rawContent = aiResult.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 
-    let cleaned = rawContent
-      .replace(/```json\s*/gi, "")
-      .replace(/```\s*/gi, "")
-      .trim();
+    let cleaned = rawContent.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
 
     const arrayStart = cleaned.indexOf("[");
     const arrayEnd = cleaned.lastIndexOf("]");
@@ -148,12 +130,9 @@ Rules:
       if (typeof e !== "object" || e === null) return false;
       const entry = e as Record<string, unknown>;
       return (
-        typeof entry.subject === "string" &&
-        entry.subject.trim().length > 0 &&
-        typeof entry.totalLectures === "number" &&
-        entry.totalLectures > 0 &&
-        typeof entry.attendedLectures === "number" &&
-        entry.attendedLectures >= 0
+        typeof entry.subject === "string" && (entry.subject as string).trim().length > 0 &&
+        typeof entry.totalLectures === "number" && entry.totalLectures > 0 &&
+        typeof entry.attendedLectures === "number" && entry.attendedLectures >= 0
       );
     }).map((e: Record<string, unknown>) => ({
       subject: String(e.subject).trim(),
