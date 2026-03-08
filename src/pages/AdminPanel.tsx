@@ -19,7 +19,7 @@ import {
   ArrowLeft, Shield, Megaphone, Image as ImageIcon, Video, Plus,
   Trash2, ToggleLeft, ToggleRight, Loader2, Users, BarChart3,
   DollarSign, TrendingUp, Eye, Clock, CheckCircle,
-  XCircle, Star, Sparkles, Link as LinkIcon, CalendarIcon
+  XCircle, Star, Sparkles, Link as LinkIcon, CalendarIcon, Pencil
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
