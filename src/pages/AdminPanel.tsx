@@ -432,7 +432,7 @@ function AnnouncementsTab() {
               </div>
               <div className="flex gap-1 shrink-0">
                 <button onClick={() => startEdit(a)} className="p-2 rounded-lg hover:bg-muted text-muted-foreground">
-                  <Sparkles size={14} />
+                  <Pencil size={14} />
                 </button>
                 <button onClick={() => toggle(a.id, !a.is_active)} className="p-2 rounded-lg hover:bg-muted">
                   {a.is_active ? <ToggleRight size={16} className="text-primary" /> : <ToggleLeft size={16} className="text-muted-foreground" />}
