@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useAdminAnnouncements } from "@/hooks/useAnnouncements";
@@ -11,11 +12,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import {
   ArrowLeft, Shield, Megaphone, Image as ImageIcon, Video, Plus,
   Trash2, ToggleLeft, ToggleRight, Loader2, Users, BarChart3,
   DollarSign, TrendingUp, Eye, Clock, CheckCircle,
-  XCircle, Star, Sparkles, Link as LinkIcon
+  XCircle, Star, Sparkles, Link as LinkIcon, CalendarIcon
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
