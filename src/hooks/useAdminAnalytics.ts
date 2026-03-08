@@ -28,13 +28,12 @@ export function useAdminAnalytics() {
       // Total users
       const { count: totalUsers } = await supabase.from("profiles").select("*", { count: "exact", head: true });
 
-      // Active today
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-      const { count: activeToday } = await supabase
+      // Total active (unique users who ever had a session)
+      const { data: allSessionUsers } = await supabase
         .from("user_sessions")
-        .select("*", { count: "exact", head: true })
-        .gte("started_at", todayStart.toISOString());
+        .select("user_id");
+      const uniqueActiveUsers = new Set(allSessionUsers?.map(s => s.user_id) || []);
+      const activeToday = uniqueActiveUsers.size;
 
       // Avg session duration
       const { data: sessions } = await supabase
