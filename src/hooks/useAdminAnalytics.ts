@@ -89,6 +89,20 @@ export function useAdminAnalytics() {
         return { date, count: cumulative };
       });
 
+      // Daily active users (last 7 days)
+      const { data: allSessions } = await supabase
+        .from("user_sessions")
+        .select("started_at, user_id")
+        .gte("started_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+        .order("started_at", { ascending: true });
+      const dailyMap: Record<string, Set<string>> = {};
+      allSessions?.forEach((s) => {
+        const date = new Date(s.started_at).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+        if (!dailyMap[date]) dailyMap[date] = new Set();
+        dailyMap[date].add(s.user_id);
+      });
+      const dailyActive = Object.entries(dailyMap).map(([date, users]) => ({ date, count: users.size }));
+
       // Ad analytics
       const { data: adAnalytics } = await supabase.from("ad_analytics").select("ad_id, event_type");
       const { data: allAds } = await supabase.from("ads").select("id, title");
@@ -120,6 +134,7 @@ export function useAdminAnalytics() {
         topFeatures,
         topPages,
         userGrowth,
+        dailyActive,
         adStats,
         totalRevenue,
         monthlyRevenue,
