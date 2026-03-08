@@ -118,6 +118,53 @@ export default function AdminPanel() {
 /* ========== ANALYTICS TAB ========== */
 function AnalyticsTab() {
   const { data, loading } = useAdminAnalytics();
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [dateStats, setDateStats] = useState<{ activeUsers: number; sessions: number; avgSession: number; revenue: number } | null>(null);
+  const [dateLoading, setDateLoading] = useState(false);
+
+  const fetchDateStats = useCallback(async (date: Date) => {
+    setDateLoading(true);
+    try {
+      const dayStart = new Date(date);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(date);
+      dayEnd.setHours(23, 59, 59, 999);
+
+      // Active users on selected date
+      const { data: sessions } = await supabase
+        .from("user_sessions")
+        .select("user_id, duration_seconds")
+        .gte("started_at", dayStart.toISOString())
+        .lte("started_at", dayEnd.toISOString());
+
+      const uniqueUsers = new Set(sessions?.map(s => s.user_id) || []);
+      const totalDuration = sessions?.reduce((s, r) => s + (r.duration_seconds || 0), 0) || 0;
+      const avgSession = sessions?.length ? Math.round(totalDuration / sessions.length) : 0;
+
+      // Revenue on selected date
+      const { data: revenue } = await supabase
+        .from("revenue_records")
+        .select("amount")
+        .gte("recorded_at", dayStart.toISOString())
+        .lte("recorded_at", dayEnd.toISOString());
+      const dayRevenue = revenue?.reduce((s, r) => s + Number(r.amount), 0) || 0;
+
+      setDateStats({
+        activeUsers: uniqueUsers.size,
+        sessions: sessions?.length || 0,
+        avgSession,
+        revenue: dayRevenue,
+      });
+    } catch (err) {
+      console.error("Date stats error:", err);
+    } finally {
+      setDateLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDateStats(selectedDate);
+  }, [selectedDate, fetchDateStats]);
 
   if (loading) return <div className="text-center py-8"><Loader2 size={24} className="animate-spin mx-auto text-primary" /></div>;
 
@@ -128,6 +175,7 @@ function AnalyticsTab() {
 
   return (
     <div className="space-y-4">
+      {/* Overall Stats */}
       <div className="grid grid-cols-2 gap-3">
         {[
           { label: "Total Users", value: data.totalUsers, icon: Users },
@@ -145,6 +193,53 @@ function AnalyticsTab() {
         ))}
       </div>
 
+      {/* Date-wise Stats */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Date-wise Stats</p>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("gap-1.5 text-xs h-8", !selectedDate && "text-muted-foreground")}>
+                  <CalendarIcon size={14} />
+                  {format(selectedDate, "dd MMM yyyy")}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(d) => d && setSelectedDate(d)}
+                  disabled={(date) => date > new Date()}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {dateLoading ? (
+            <div className="text-center py-4"><Loader2 size={20} className="animate-spin mx-auto text-primary" /></div>
+          ) : dateStats ? (
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { label: "Active Users", value: dateStats.activeUsers, icon: Users },
+                { label: "Sessions", value: dateStats.sessions, icon: Eye },
+                { label: "Avg Session", value: formatDuration(dateStats.avgSession), icon: Clock },
+                { label: "Revenue", value: `₹${dateStats.revenue}`, icon: DollarSign },
+              ].map(({ label, value, icon: Icon }) => (
+                <div key={label} className="bg-muted/50 rounded-lg p-3 text-center">
+                  <Icon size={14} className="mx-auto mb-1 text-primary" />
+                  <p className="text-lg font-bold text-foreground">{value}</p>
+                  <p className="text-[10px] text-muted-foreground">{label}</p>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+
+      {/* Daily Active Chart */}
       {data.dailyActive.length > 0 && (
         <Card>
           <CardContent className="p-4">
