@@ -8,6 +8,7 @@ interface AnalyticsData {
   topFeatures: { name: string; count: number }[];
   topPages: { name: string; count: number }[];
   userGrowth: { date: string; count: number }[];
+  dailyActive: { date: string; count: number }[];
   adStats: { ad_id: string; title: string; impressions: number; clicks: number; skips: number; completes: number }[];
   totalRevenue: number;
   monthlyRevenue: { month: string; amount: number }[];
