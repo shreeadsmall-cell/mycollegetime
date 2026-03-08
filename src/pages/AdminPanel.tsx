@@ -293,6 +293,7 @@ function AnnouncementsTab() {
 function AdsTab() {
   const { ads, loading, create, toggle, remove } = useAdminAds();
   const [showForm, setShowForm] = useState(false);
+  const [editingAd, setEditingAd] = useState<Ad | null>(null);
   const [title, setTitle] = useState("");
   const [mediaUrl, setMediaUrl] = useState("");
   const [mediaLinkInput, setMediaLinkInput] = useState("");
@@ -332,18 +333,44 @@ function AdsTab() {
     toast.success("Media link added!");
   };
 
-  const clearMedia = () => {
-    setMediaUrl("");
-    setMediaLinkInput("");
-    setMediaType("image");
+  const clearMedia = () => { setMediaUrl(""); setMediaLinkInput(""); setMediaType("image"); };
+
+  const resetForm = () => {
+    setTitle(""); setMediaUrl(""); setClickUrl(""); setMediaLinkInput("");
+    setDelaySeconds(3); setSkipAfterSeconds(5); setDurationSeconds(10); setMaxViews(3);
+    setMediaType("image"); setMediaMethod("upload"); setEditingAd(null); setShowForm(false);
   };
 
-  const handleCreate = async () => {
+  const startEdit = (ad: Ad) => {
+    setEditingAd(ad);
+    setTitle(ad.title);
+    setMediaUrl(ad.media_url);
+    setMediaType(ad.media_type as "image" | "video");
+    setClickUrl(ad.click_url || "");
+    setDelaySeconds(ad.delay_seconds);
+    setSkipAfterSeconds(ad.skip_after_seconds);
+    setDurationSeconds(ad.duration_seconds);
+    setMaxViews(ad.max_views_per_day);
+    setShowForm(true);
+  };
+
+  const handleSave = async () => {
     if (!title.trim() || !mediaUrl) return;
-    await create({ title, media_type: mediaType, media_url: mediaUrl, click_url: clickUrl || null,
-      delay_seconds: delaySeconds, skip_after_seconds: skipAfterSeconds,
-      duration_seconds: durationSeconds, max_views_per_day: maxViews });
-    setTitle(""); setMediaUrl(""); setClickUrl(""); setMediaLinkInput(""); setShowForm(false);
+    if (editingAd) {
+      // Update existing ad
+      await supabase.from("ads").update({
+        title, media_type: mediaType, media_url: mediaUrl, click_url: clickUrl || null,
+        delay_seconds: delaySeconds, skip_after_seconds: skipAfterSeconds,
+        duration_seconds: durationSeconds, max_views_per_day: maxViews,
+      }).eq("id", editingAd.id);
+      toast.success("Ad updated!");
+    } else {
+      await create({ title, media_type: mediaType, media_url: mediaUrl, click_url: clickUrl || null,
+        delay_seconds: delaySeconds, skip_after_seconds: skipAfterSeconds,
+        duration_seconds: durationSeconds, max_views_per_day: maxViews });
+      toast.success("Ad created!");
+    }
+    resetForm();
   };
 
   const renderMediaPreview = () => {
@@ -370,9 +397,10 @@ function AdsTab() {
   return (
     <div className="space-y-3">
       {!showForm ? (
-        <Button onClick={() => setShowForm(true)} className="w-full h-11 gap-2"><Plus size={16} /> New Ad</Button>
+        <Button onClick={() => { resetForm(); setShowForm(true); }} className="w-full h-11 gap-2"><Plus size={16} /> New Ad</Button>
       ) : (
         <Card><CardContent className="p-4 space-y-3">
+          <p className="text-sm font-semibold text-foreground">{editingAd ? "Edit Ad" : "New Ad"}</p>
           <Input placeholder="Ad title" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
 
           <input ref={fileRef} type="file" accept="image/*,video/*" onChange={handleUpload} className="hidden" />
@@ -398,9 +426,7 @@ function AdsTab() {
             </div>
           )}
 
-          {mediaUrl ? (
-            renderMediaPreview()
-          ) : mediaMethod === "upload" ? (
+          {mediaUrl ? renderMediaPreview() : mediaMethod === "upload" ? (
             <Button size="sm" variant="outline" className="w-full gap-2" onClick={() => fileRef.current?.click()} disabled={uploading}>
               {uploading ? <Loader2 size={14} className="animate-spin" /> : <><Upload size={14} /> Upload Media</>}
             </Button>
@@ -419,8 +445,8 @@ function AdsTab() {
             <div><label className="text-xs text-muted-foreground">Max views/day</label><Input type="number" min={1} value={maxViews} onChange={(e) => setMaxViews(Number(e.target.value))} /></div>
           </div>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => { setShowForm(false); clearMedia(); }} className="flex-1">Cancel</Button>
-            <Button size="sm" onClick={handleCreate} disabled={!title.trim() || !mediaUrl} className="flex-1">Create</Button>
+            <Button size="sm" variant="outline" onClick={resetForm} className="flex-1">Cancel</Button>
+            <Button size="sm" onClick={handleSave} disabled={!title.trim() || !mediaUrl} className="flex-1">{editingAd ? "Update" : "Create"}</Button>
           </div>
         </CardContent></Card>
       )}
@@ -438,8 +464,24 @@ function AdsTab() {
                   <p className="font-semibold text-foreground text-sm truncate">{a.title}</p>
                 </div>
                 <p className="text-xs text-muted-foreground">Skip: {a.skip_after_seconds}s • Duration: {a.duration_seconds}s • Max: {a.max_views_per_day}/day</p>
+                {a.media_url && (
+                  <div className="mt-2 rounded-lg overflow-hidden max-h-20">
+                    {a.media_type === "video" ? (
+                      getYouTubeEmbedUrl(a.media_url) ? (
+                        <div className="text-[10px] text-muted-foreground flex items-center gap-1"><Video size={10} /> YouTube video</div>
+                      ) : (
+                        <div className="text-[10px] text-muted-foreground flex items-center gap-1"><Video size={10} /> Video file</div>
+                      )
+                    ) : (
+                      <img src={a.media_url} alt="" className="w-full max-h-20 object-cover rounded-lg" />
+                    )}
+                  </div>
+                )}
               </div>
-              <div className="flex gap-1 shrink-0">
+              <div className="flex flex-col gap-1 shrink-0">
+                <button onClick={() => startEdit(a)} className="p-2 rounded-lg hover:bg-muted" title="Edit">
+                  <Sparkles size={14} className="text-primary" />
+                </button>
                 <button onClick={() => toggle(a.id, !a.is_active)} className="p-2 rounded-lg hover:bg-muted">
                   {a.is_active ? <ToggleRight size={16} className="text-primary" /> : <ToggleLeft size={16} className="text-muted-foreground" />}
                 </button>
