@@ -179,7 +179,7 @@ function AnalyticsTab() {
       <div className="grid grid-cols-2 gap-3">
         {[
           { label: "Total Users", value: data.totalUsers, icon: Users },
-          { label: "Active Today", value: data.activeToday, icon: TrendingUp },
+          { label: "Total Active", value: data.activeToday, icon: TrendingUp },
           { label: "Avg Session", value: formatDuration(data.avgSessionDuration), icon: Clock },
           { label: "Total Revenue", value: `₹${data.totalRevenue}`, icon: DollarSign },
         ].map(({ label, value, icon: Icon }) => (
