@@ -586,7 +586,7 @@ function AdsTab() {
               </div>
               <div className="flex flex-col gap-1 shrink-0">
                 <button onClick={() => startEdit(a)} className="p-2 rounded-lg hover:bg-muted" title="Edit">
-                  <Sparkles size={14} className="text-primary" />
+                  <Pencil size={14} className="text-primary" />
                 </button>
                 <button onClick={() => toggle(a.id, !a.is_active)} className="p-2 rounded-lg hover:bg-muted">
                   {a.is_active ? <ToggleRight size={16} className="text-primary" /> : <ToggleLeft size={16} className="text-muted-foreground" />}
