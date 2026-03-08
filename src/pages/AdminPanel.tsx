@@ -19,7 +19,7 @@ import {
   ArrowLeft, Shield, Megaphone, Image as ImageIcon, Video, Plus,
   Trash2, ToggleLeft, ToggleRight, Loader2, Users, BarChart3,
   DollarSign, TrendingUp, Eye, Clock, CheckCircle,
-  XCircle, Star, Sparkles, Link as LinkIcon, CalendarIcon
+  XCircle, Star, Sparkles, Link as LinkIcon, CalendarIcon, Pencil
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -432,7 +432,7 @@ function AnnouncementsTab() {
               </div>
               <div className="flex gap-1 shrink-0">
                 <button onClick={() => startEdit(a)} className="p-2 rounded-lg hover:bg-muted text-muted-foreground">
-                  <Sparkles size={14} />
+                  <Pencil size={14} />
                 </button>
                 <button onClick={() => toggle(a.id, !a.is_active)} className="p-2 rounded-lg hover:bg-muted">
                   {a.is_active ? <ToggleRight size={16} className="text-primary" /> : <ToggleLeft size={16} className="text-muted-foreground" />}
@@ -586,7 +586,7 @@ function AdsTab() {
               </div>
               <div className="flex flex-col gap-1 shrink-0">
                 <button onClick={() => startEdit(a)} className="p-2 rounded-lg hover:bg-muted" title="Edit">
-                  <Sparkles size={14} className="text-primary" />
+                  <Pencil size={14} className="text-primary" />
                 </button>
                 <button onClick={() => toggle(a.id, !a.is_active)} className="p-2 rounded-lg hover:bg-muted">
                   {a.is_active ? <ToggleRight size={16} className="text-primary" /> : <ToggleLeft size={16} className="text-muted-foreground" />}
