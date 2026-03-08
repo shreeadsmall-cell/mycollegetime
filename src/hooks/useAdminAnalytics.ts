@@ -17,7 +17,7 @@ interface AnalyticsData {
 export function useAdminAnalytics() {
   const [data, setData] = useState<AnalyticsData>({
     totalUsers: 0, activeToday: 0, avgSessionDuration: 0,
-    topFeatures: [], topPages: [], userGrowth: [], adStats: [],
+    topFeatures: [], topPages: [], userGrowth: [], dailyActive: [], adStats: [],
     totalRevenue: 0, monthlyRevenue: [],
   });
   const [loading, setLoading] = useState(true);
