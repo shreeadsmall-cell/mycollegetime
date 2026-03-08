@@ -141,6 +141,27 @@ function AnalyticsTab() {
         ))}
       </div>
 
+      {data.dailyActive.length > 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Daily Active Users (Last 7 Days)</p>
+            <div className="flex items-end gap-1.5 h-28">
+              {data.dailyActive.map((d, i) => {
+                const max = Math.max(...data.dailyActive.map((g) => g.count));
+                const height = max > 0 ? (d.count / max) * 100 : 0;
+                return (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                    <span className="text-[9px] font-bold text-foreground">{d.count}</span>
+                    <div className="w-full bg-primary/80 rounded-t transition-all" style={{ height: `${Math.max(8, height)}%` }} />
+                    <span className="text-[7px] sm:text-[8px] text-muted-foreground truncate w-full text-center">{d.date.split(",")[0]}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {data.topFeatures.length > 0 && (
         <Card>
           <CardContent className="p-4">
