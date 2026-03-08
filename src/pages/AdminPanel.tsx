@@ -331,22 +331,46 @@ function AnalyticsTab() {
 
 /* ========== ANNOUNCEMENTS TAB ========== */
 function AnnouncementsTab() {
-  const { announcements, loading, create, toggle, remove } = useAdminAnnouncements();
+  const { announcements, loading, create, update, toggle, remove } = useAdminAnnouncements();
   const [showForm, setShowForm] = useState(false);
+  const [editingAnn, setEditingAnn] = useState<typeof announcements[0] | null>(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
 
-  const handleCreate = async () => {
-    if (!title.trim()) return;
-    await create({
-      title,
-      content: content || undefined,
-      image_url: imageUrl || undefined,
-      video_url: videoUrl || undefined,
-    });
+  const startEdit = (a: typeof announcements[0]) => {
+    setEditingAnn(a);
+    setTitle(a.title);
+    setContent(a.content || "");
+    setImageUrl(a.image_url || "");
+    setVideoUrl(a.video_url || "");
+    setShowForm(true);
+  };
+
+  const resetForm = () => {
+    setEditingAnn(null);
     setTitle(""); setContent(""); setImageUrl(""); setVideoUrl(""); setShowForm(false);
+  };
+
+  const handleSave = async () => {
+    if (!title.trim()) return;
+    if (editingAnn) {
+      await update(editingAnn.id, {
+        title,
+        content: content || null,
+        image_url: imageUrl || null,
+        video_url: videoUrl || null,
+      });
+    } else {
+      await create({
+        title,
+        content: content || undefined,
+        image_url: imageUrl || undefined,
+        video_url: videoUrl || undefined,
+      });
+    }
+    resetForm();
   };
 
   const renderMediaPreview = () => {
@@ -364,9 +388,10 @@ function AnnouncementsTab() {
   return (
     <div className="space-y-3">
       {!showForm ? (
-        <Button onClick={() => setShowForm(true)} className="w-full h-11 gap-2"><Plus size={16} /> New Announcement</Button>
+        <Button onClick={() => { setEditingAnn(null); setShowForm(true); }} className="w-full h-11 gap-2"><Plus size={16} /> New Announcement</Button>
       ) : (
         <Card><CardContent className="p-4 space-y-3">
+          <p className="text-sm font-bold text-foreground">{editingAnn ? "Edit Announcement" : "New Announcement"}</p>
           <Input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
           <textarea placeholder="Content (optional)" value={content} onChange={(e) => setContent(e.target.value)}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm min-h-[80px] resize-none" />
@@ -380,8 +405,8 @@ function AnnouncementsTab() {
           </div>
           {renderMediaPreview()}
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => setShowForm(false)} className="flex-1">Cancel</Button>
-            <Button size="sm" onClick={handleCreate} disabled={!title.trim()} className="flex-1">Post</Button>
+            <Button size="sm" variant="outline" onClick={resetForm} className="flex-1">Cancel</Button>
+            <Button size="sm" onClick={handleSave} disabled={!title.trim()} className="flex-1">{editingAnn ? "Save" : "Post"}</Button>
           </div>
         </CardContent></Card>
       )}
@@ -406,6 +431,9 @@ function AnnouncementsTab() {
                 <p className="text-xs text-muted-foreground mt-1">{new Date(a.created_at).toLocaleDateString()}</p>
               </div>
               <div className="flex gap-1 shrink-0">
+                <button onClick={() => startEdit(a)} className="p-2 rounded-lg hover:bg-muted text-muted-foreground">
+                  <Sparkles size={14} />
+                </button>
                 <button onClick={() => toggle(a.id, !a.is_active)} className="p-2 rounded-lg hover:bg-muted">
                   {a.is_active ? <ToggleRight size={16} className="text-primary" /> : <ToggleLeft size={16} className="text-muted-foreground" />}
                 </button>

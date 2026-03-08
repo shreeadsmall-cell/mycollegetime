@@ -78,10 +78,15 @@ export function useAdminAnnouncements() {
     fetchAll();
   };
 
+  const update = async (id: string, updates: { title?: string; content?: string | null; image_url?: string | null; video_url?: string | null }) => {
+    await supabase.from("announcements").update(updates).eq("id", id);
+    fetchAll();
+  };
+
   const remove = async (id: string) => {
     await supabase.from("announcements").delete().eq("id", id);
     fetchAll();
   };
 
-  return { announcements, loading, create, toggle, remove, refresh: fetchAll };
+  return { announcements, loading, create, update, toggle, remove, refresh: fetchAll };
 }
