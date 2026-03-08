@@ -1,14 +1,13 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { usePromotions } from "@/hooks/usePromotions";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  ArrowLeft, Upload, Loader2, CheckCircle, Clock, XCircle,
-  ImagePlus, Send, Sparkles, Link as LinkIcon, Image as ImageIcon,
+  ArrowLeft, Loader2, CheckCircle, Clock, XCircle,
+  Send, Sparkles, Link as LinkIcon, Image as ImageIcon,
   Video, Eye
 } from "lucide-react";
 import { toast } from "sonner";
@@ -33,30 +32,17 @@ function getYouTubeEmbedUrl(url: string): string | null {
   return match ? `https://www.youtube.com/embed/${match[1]}` : null;
 }
 
-function isImageUrl(url: string): boolean {
-  if (!url) return false;
-  const lower = url.toLowerCase();
-  if (lower.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?|$)/)) return true;
-  // Assume it's an image if it's not a video and has http
-  if (lower.startsWith("http") && !isVideoUrl(url)) return true;
-  return false;
-}
-
 export function PromotionSubmit({ onBack, userId }: PromotionSubmitProps) {
   const { promotions, loading, submit } = usePromotions(userId);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [mediaUrl, setMediaUrl] = useState("");
-  const [mediaLinkInput, setMediaLinkInput] = useState("");
   const [mediaType, setMediaType] = useState<"image" | "video">("image");
   const [contact, setContact] = useState("");
   const [link, setLink] = useState("");
-  const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [mediaMethod, setMediaMethod] = useState<"upload" | "link">("upload");
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const errors = {
     title: !title.trim(),
@@ -66,48 +52,13 @@ export function PromotionSubmit({ onBack, userId }: PromotionSubmitProps) {
   };
   const isValid = !errors.title && !errors.description && !errors.category && !errors.contact;
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const isImage = file.type.match(/^image\/(jpeg|png|webp)$/);
-    const isVid = file.type.match(/^video\/(mp4|webm)$/);
-
-    if (!isImage && !isVid) {
-      toast.error("Supported formats: JPG, PNG, WEBP, MP4, WEBM");
-      return;
-    }
-
-    if (file.size > 50 * 1024 * 1024) {
-      toast.error("File too large. Maximum 50MB.");
-      return;
-    }
-
-    setUploading(true);
-    const path = `promotions/${Date.now()}-${file.name}`;
-    const { error } = await supabase.storage.from("media").upload(path, file);
-    if (!error) {
-      const { data } = supabase.storage.from("media").getPublicUrl(path);
-      setMediaUrl(data.publicUrl);
-      setMediaType(isVid ? "video" : "image");
-      toast.success("Media uploaded successfully!");
-    } else {
-      toast.error("Upload failed. Please try again.");
-    }
-    setUploading(false);
-    e.target.value = "";
-  };
-
-  const handleMediaLink = () => {
-    if (!mediaLinkInput.trim()) return;
-    const url = mediaLinkInput.trim();
+  const handleMediaUrl = (url: string) => {
+    setMediaUrl(url);
     if (isVideoUrl(url)) {
       setMediaType("video");
     } else {
       setMediaType("image");
     }
-    setMediaUrl(url);
-    toast.success("Media link added!");
   };
 
   const handleSubmit = async () => {
@@ -125,14 +76,8 @@ export function PromotionSubmit({ onBack, userId }: PromotionSubmitProps) {
     setSubmitting(false);
     setTimeout(() => {
       setTitle(""); setDescription(""); setCategory(""); setMediaUrl("");
-      setContact(""); setLink(""); setMediaLinkInput(""); setSubmitted(false);
+      setContact(""); setLink(""); setSubmitted(false);
     }, 3000);
-  };
-
-  const clearMedia = () => {
-    setMediaUrl("");
-    setMediaLinkInput("");
-    setMediaType("image");
   };
 
   const statusIcon = (status: string) => {
@@ -155,7 +100,6 @@ export function PromotionSubmit({ onBack, userId }: PromotionSubmitProps) {
 
   const renderMediaPreview = () => {
     if (!mediaUrl) return null;
-
     const youtubeEmbed = getYouTubeEmbedUrl(mediaUrl);
 
     return (
@@ -166,6 +110,7 @@ export function PromotionSubmit({ onBack, userId }: PromotionSubmitProps) {
               src={youtubeEmbed}
               className="w-full aspect-video"
               allowFullScreen
+              loading="lazy"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             />
           ) : (
@@ -176,11 +121,12 @@ export function PromotionSubmit({ onBack, userId }: PromotionSubmitProps) {
             src={mediaUrl}
             alt="Ad preview"
             className="w-full h-40 object-cover"
-            onError={() => { toast.error("Image failed to load"); clearMedia(); }}
+            loading="lazy"
+            onError={() => { toast.error("Image failed to load"); setMediaUrl(""); }}
           />
         )}
         <button
-          onClick={clearMedia}
+          onClick={() => setMediaUrl("")}
           className="absolute top-2 right-2 p-1.5 rounded-full bg-foreground/60 text-background hover:bg-foreground/80 transition-colors"
         >
           <XCircle size={14} />
@@ -210,7 +156,6 @@ export function PromotionSubmit({ onBack, userId }: PromotionSubmitProps) {
       </div>
 
       <div className="flex-1 px-4 -mt-4 space-y-4">
-        {/* Success state */}
         {submitted ? (
           <Card className="mt-1">
             <CardContent className="py-10 text-center">
@@ -222,7 +167,6 @@ export function PromotionSubmit({ onBack, userId }: PromotionSubmitProps) {
             </CardContent>
           </Card>
         ) : (
-          /* Submission form */
           <Card className="mt-1">
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Submit New Ad</CardTitle>
@@ -231,174 +175,73 @@ export function PromotionSubmit({ onBack, userId }: PromotionSubmitProps) {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Title */}
               <div>
                 <label className="text-xs font-medium text-foreground mb-1.5 block">Ad Title <span className="text-destructive">*</span></label>
-                <Input
-                  placeholder="e.g. Selling NCERT Books"
-                  value={title}
-                  onChange={e => setTitle(e.target.value)}
-                  className="h-11"
-                  maxLength={100}
-                />
+                <Input placeholder="e.g. Selling NCERT Books" value={title} onChange={e => setTitle(e.target.value)} className="h-11" maxLength={100} />
               </div>
 
-              {/* Description */}
               <div>
                 <label className="text-xs font-medium text-foreground mb-1.5 block">Description <span className="text-destructive">*</span></label>
-                <Textarea
-                  placeholder="Describe your ad in detail..."
-                  value={description}
-                  onChange={e => setDescription(e.target.value)}
-                  className="min-h-[80px] resize-none"
-                  maxLength={500}
-                />
+                <Textarea placeholder="Describe your ad in detail..." value={description} onChange={e => setDescription(e.target.value)} className="min-h-[80px] resize-none" maxLength={500} />
                 <p className="text-[10px] text-muted-foreground text-right mt-0.5">{description.length}/500</p>
               </div>
 
-              {/* Category */}
               <div>
                 <label className="text-xs font-medium text-foreground mb-1.5 block">Category <span className="text-destructive">*</span></label>
                 <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger className="h-11">
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
+                  <SelectTrigger className="h-11"><SelectValue placeholder="Select a category" /></SelectTrigger>
                   <SelectContent>
-                    {CATEGORIES.map(c => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
-                    ))}
+                    {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Media section */}
+              {/* Media URL only */}
               <div>
-                <label className="text-xs font-medium text-foreground mb-1.5 block">Media (optional)</label>
-
-                {/* Tab toggle for upload vs link */}
-                {!mediaUrl && (
-                  <div className="flex rounded-lg border border-border overflow-hidden mb-3">
-                    <button
-                      onClick={() => setMediaMethod("upload")}
-                      className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors ${
-                        mediaMethod === "upload"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-card text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      <Upload size={12} /> Upload File
-                    </button>
-                    <button
-                      onClick={() => setMediaMethod("link")}
-                      className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors ${
-                        mediaMethod === "link"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-card text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      <LinkIcon size={12} /> Paste URL
-                    </button>
-                  </div>
-                )}
-
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"
-                  onChange={handleUpload}
-                  className="hidden"
-                />
-
+                <label className="text-xs font-medium text-foreground mb-1.5 block">Media URL (optional)</label>
                 {mediaUrl ? (
                   renderMediaPreview()
-                ) : mediaMethod === "upload" ? (
-                  <button
-                    onClick={() => fileRef.current?.click()}
-                    disabled={uploading}
-                    className="w-full h-28 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-primary hover:text-primary transition-colors"
-                  >
-                    {uploading ? (
-                      <Loader2 size={20} className="animate-spin" />
-                    ) : (
-                      <>
-                        <ImagePlus size={24} />
-                        <span className="text-xs font-medium">Tap to upload image or video</span>
-                        <span className="text-[10px] text-muted-foreground">JPG, PNG, WEBP, MP4, WEBM • Max 50MB</span>
-                      </>
-                    )}
-                  </button>
                 ) : (
                   <div className="space-y-2">
                     <div className="flex gap-2">
                       <Input
-                        placeholder="https://... (image or video URL)"
-                        value={mediaLinkInput}
-                        onChange={e => setMediaLinkInput(e.target.value)}
+                        placeholder="Paste image or video URL"
+                        value={mediaUrl}
+                        onChange={e => handleMediaUrl(e.target.value)}
                         className="h-10 flex-1"
                         type="url"
                       />
-                      <Button
-                        size="sm"
-                        onClick={handleMediaLink}
-                        disabled={!mediaLinkInput.trim()}
-                        className="h-10 px-3"
-                      >
-                        Add
-                      </Button>
                     </div>
-                    <p className="text-[10px] text-muted-foreground">
-                      Supports image URLs, YouTube links, and direct video URLs
+                    <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <LinkIcon size={9} /> Supports image URLs, YouTube links, and direct video URLs
                     </p>
                   </div>
                 )}
               </div>
 
-              {/* Contact */}
               <div>
                 <label className="text-xs font-medium text-foreground mb-1.5 block">Contact Info <span className="text-destructive">*</span></label>
-                <Input
-                  placeholder="Phone number or email"
-                  value={contact}
-                  onChange={e => setContact(e.target.value)}
-                  className="h-11"
-                  maxLength={100}
-                />
+                <Input placeholder="Phone number or email" value={contact} onChange={e => setContact(e.target.value)} className="h-11" maxLength={100} />
               </div>
 
-              {/* Optional link */}
               <div>
                 <label className="text-xs font-medium text-foreground mb-1.5 block">Website Link (optional)</label>
-                <Input
-                  placeholder="https://..."
-                  value={link}
-                  onChange={e => setLink(e.target.value)}
-                  className="h-11"
-                  type="url"
-                />
+                <Input placeholder="https://..." value={link} onChange={e => setLink(e.target.value)} className="h-11" type="url" />
               </div>
 
-              {/* Submit */}
-              <Button
-                onClick={handleSubmit}
-                disabled={!isValid || submitting}
-                className="w-full h-12 gap-2 font-semibold text-base"
-              >
+              <Button onClick={handleSubmit} disabled={!isValid || submitting} className="w-full h-12 gap-2 font-semibold text-base">
                 {submitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                 Submit Ad for Review
               </Button>
 
-              <p className="text-center text-[11px] text-muted-foreground">
-                All ads are reviewed before appearing in the app.
-              </p>
+              <p className="text-center text-[11px] text-muted-foreground">All ads are reviewed before appearing in the app.</p>
             </CardContent>
           </Card>
         )}
 
         {/* My submissions */}
         <div className="pb-4">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-            My Submissions
-          </p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">My Submissions</p>
           {loading ? (
             <div className="text-center py-8"><Loader2 size={24} className="animate-spin mx-auto text-primary" /></div>
           ) : promotions.length === 0 ? (
@@ -411,18 +254,14 @@ export function PromotionSubmit({ onBack, userId }: PromotionSubmitProps) {
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm text-foreground truncate">{p.title}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {new Date(p.created_at).toLocaleDateString()}
-                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{new Date(p.created_at).toLocaleDateString()}</p>
                       </div>
                       <span className={`flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${statusColor(p.status)}`}>
                         {statusIcon(p.status)} {p.status}
                       </span>
                     </div>
                     {p.admin_notes && (
-                      <p className="text-xs text-muted-foreground mt-2 bg-muted p-2 rounded">
-                        Admin: {p.admin_notes}
-                      </p>
+                      <p className="text-xs text-muted-foreground mt-2 bg-muted p-2 rounded">Admin: {p.admin_notes}</p>
                     )}
                   </CardContent>
                 </Card>

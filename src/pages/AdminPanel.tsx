@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useAdminAnnouncements } from "@/hooks/useAnnouncements";
@@ -13,8 +13,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import {
   ArrowLeft, Shield, Megaphone, Image as ImageIcon, Video, Plus,
-  Trash2, ToggleLeft, ToggleRight, Loader2, Upload, Users, BarChart3,
-  DollarSign, TrendingUp, Eye, MousePointer, Clock, CheckCircle,
+  Trash2, ToggleLeft, ToggleRight, Loader2, Users, BarChart3,
+  DollarSign, TrendingUp, Eye, Clock, CheckCircle,
   XCircle, Star, Sparkles, Link as LinkIcon
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -215,30 +215,30 @@ function AnnouncementsTab() {
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [uploading, setUploading] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    const path = `announcements/${Date.now()}-${file.name}`;
-    const { error } = await supabase.storage.from("media").upload(path, file);
-    if (!error) {
-      const { data } = supabase.storage.from("media").getPublicUrl(path);
-      setImageUrl(data.publicUrl);
-    } else {
-      toast.error("Upload failed");
-    }
-    setUploading(false);
-    e.target.value = "";
-  };
+  const [videoUrl, setVideoUrl] = useState("");
 
   const handleCreate = async () => {
     if (!title.trim()) return;
-    await create({ title, content: content || undefined, image_url: imageUrl || undefined });
-    setTitle(""); setContent(""); setImageUrl(""); setShowForm(false);
+    await create({
+      title,
+      content: content || undefined,
+      image_url: imageUrl || undefined,
+      video_url: videoUrl || undefined,
+    });
+    setTitle(""); setContent(""); setImageUrl(""); setVideoUrl(""); setShowForm(false);
+  };
+
+  const renderMediaPreview = () => {
+    if (imageUrl) {
+      return <img src={imageUrl} alt="" className="w-full max-h-32 rounded-lg object-cover" loading="lazy" />;
+    }
+    if (videoUrl) {
+      const ytEmbed = getYouTubeEmbedUrl(videoUrl);
+      if (ytEmbed) return <iframe src={ytEmbed} className="w-full aspect-video rounded-lg" allowFullScreen loading="lazy" />;
+      return <video src={videoUrl} className="w-full max-h-32 rounded-lg" controls />;
+    }
+    return null;
   };
 
   return (
@@ -250,15 +250,18 @@ function AnnouncementsTab() {
           <Input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
           <textarea placeholder="Content (optional)" value={content} onChange={(e) => setContent(e.target.value)}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm min-h-[80px] resize-none" />
-          {imageUrl && <img src={imageUrl} alt="" className="w-full max-h-32 rounded-lg object-cover" />}
-          <div className="flex flex-wrap gap-2">
-            <input ref={fileRef} type="file" accept="image/*" onChange={handleUploadImage} className="hidden" />
-            <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()} disabled={uploading}>
-              {uploading ? <Loader2 size={14} className="animate-spin" /> : <><Upload size={14} /> Image</>}
-            </Button>
-            <div className="flex-1" />
-            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
-            <Button size="sm" onClick={handleCreate} disabled={!title.trim()}>Post</Button>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Image URL (optional)</label>
+            <Input placeholder="https://... image link" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} type="url" />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Video URL (optional)</label>
+            <Input placeholder="YouTube or video link" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} type="url" />
+          </div>
+          {renderMediaPreview()}
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => setShowForm(false)} className="flex-1">Cancel</Button>
+            <Button size="sm" onClick={handleCreate} disabled={!title.trim()} className="flex-1">Post</Button>
           </div>
         </CardContent></Card>
       )}
@@ -273,6 +276,13 @@ function AnnouncementsTab() {
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-foreground text-sm truncate">{a.title}</p>
                 {a.content && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{a.content}</p>}
+                {a.image_url && <img src={a.image_url} alt="" className="w-full max-h-20 rounded-lg object-cover mt-2" loading="lazy" />}
+                {a.video_url && (() => {
+                  const yt = getYouTubeEmbedUrl(a.video_url);
+                  return yt
+                    ? <iframe src={yt} className="w-full aspect-video rounded-lg mt-2" allowFullScreen loading="lazy" />
+                    : <video src={a.video_url} className="w-full max-h-20 rounded-lg mt-2" controls />;
+                })()}
                 <p className="text-xs text-muted-foreground mt-1">{new Date(a.created_at).toLocaleDateString()}</p>
               </div>
               <div className="flex gap-1 shrink-0">
@@ -296,49 +306,22 @@ function AdsTab() {
   const [editingAd, setEditingAd] = useState<Ad | null>(null);
   const [title, setTitle] = useState("");
   const [mediaUrl, setMediaUrl] = useState("");
-  const [mediaLinkInput, setMediaLinkInput] = useState("");
   const [mediaType, setMediaType] = useState<"image" | "video">("image");
-  const [mediaMethod, setMediaMethod] = useState<"upload" | "link">("upload");
   const [clickUrl, setClickUrl] = useState("");
   const [delaySeconds, setDelaySeconds] = useState(3);
   const [skipAfterSeconds, setSkipAfterSeconds] = useState(5);
   const [durationSeconds, setDurationSeconds] = useState(10);
   const [maxViews, setMaxViews] = useState(3);
-  const [uploading, setUploading] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    setMediaType(file.type.startsWith("video/") ? "video" : "image");
-    const path = `ads/${Date.now()}-${file.name}`;
-    const { error } = await supabase.storage.from("media").upload(path, file);
-    if (!error) {
-      const { data } = supabase.storage.from("media").getPublicUrl(path);
-      setMediaUrl(data.publicUrl);
-      toast.success("Media uploaded!");
-    } else {
-      toast.error("Upload failed");
-    }
-    setUploading(false);
-    e.target.value = "";
-  };
-
-  const handleMediaLink = () => {
-    if (!mediaLinkInput.trim()) return;
-    const url = mediaLinkInput.trim();
-    setMediaType(isVideoUrl(url) ? "video" : "image");
+  const handleMediaUrl = (url: string) => {
     setMediaUrl(url);
-    toast.success("Media link added!");
+    setMediaType(isVideoUrl(url) ? "video" : "image");
   };
-
-  const clearMedia = () => { setMediaUrl(""); setMediaLinkInput(""); setMediaType("image"); };
 
   const resetForm = () => {
-    setTitle(""); setMediaUrl(""); setClickUrl(""); setMediaLinkInput("");
+    setTitle(""); setMediaUrl(""); setClickUrl("");
     setDelaySeconds(3); setSkipAfterSeconds(5); setDurationSeconds(10); setMaxViews(3);
-    setMediaType("image"); setMediaMethod("upload"); setEditingAd(null); setShowForm(false);
+    setMediaType("image"); setEditingAd(null); setShowForm(false);
   };
 
   const startEdit = (ad: Ad) => {
@@ -357,7 +340,6 @@ function AdsTab() {
   const handleSave = async () => {
     if (!title.trim() || !mediaUrl) return;
     if (editingAd) {
-      // Update existing ad
       await supabase.from("ads").update({
         title, media_type: mediaType, media_url: mediaUrl, click_url: clickUrl || null,
         delay_seconds: delaySeconds, skip_after_seconds: skipAfterSeconds,
@@ -380,14 +362,14 @@ function AdsTab() {
       <div className="relative rounded-lg overflow-hidden border border-border">
         {mediaType === "video" ? (
           youtubeEmbed ? (
-            <iframe src={youtubeEmbed} className="w-full aspect-video" allowFullScreen />
+            <iframe src={youtubeEmbed} className="w-full aspect-video" allowFullScreen loading="lazy" />
           ) : (
             <video src={mediaUrl} className="w-full max-h-32 rounded-lg" controls />
           )
         ) : (
-          <img src={mediaUrl} alt="" className="w-full max-h-32 rounded-lg object-cover" />
+          <img src={mediaUrl} alt="" className="w-full max-h-32 rounded-lg object-cover" loading="lazy" />
         )}
-        <button onClick={clearMedia} className="absolute top-1 right-1 p-1 rounded-full bg-foreground/60 text-background">
+        <button onClick={() => setMediaUrl("")} className="absolute top-1 right-1 p-1 rounded-full bg-foreground/60 text-background">
           <XCircle size={12} />
         </button>
       </div>
@@ -403,37 +385,13 @@ function AdsTab() {
           <p className="text-sm font-semibold text-foreground">{editingAd ? "Edit Ad" : "New Ad"}</p>
           <Input placeholder="Ad title" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
 
-          <input ref={fileRef} type="file" accept="image/*,video/*" onChange={handleUpload} className="hidden" />
-
-          {!mediaUrl && (
-            <div className="flex rounded-lg border border-border overflow-hidden">
-              <button
-                onClick={() => setMediaMethod("upload")}
-                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors ${
-                  mediaMethod === "upload" ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground"
-                }`}
-              >
-                <Upload size={12} /> Upload
-              </button>
-              <button
-                onClick={() => setMediaMethod("link")}
-                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors ${
-                  mediaMethod === "link" ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground"
-                }`}
-              >
-                <LinkIcon size={12} /> URL
-              </button>
-            </div>
-          )}
-
-          {mediaUrl ? renderMediaPreview() : mediaMethod === "upload" ? (
-            <Button size="sm" variant="outline" className="w-full gap-2" onClick={() => fileRef.current?.click()} disabled={uploading}>
-              {uploading ? <Loader2 size={14} className="animate-spin" /> : <><Upload size={14} /> Upload Media</>}
-            </Button>
-          ) : (
-            <div className="flex gap-2">
-              <Input placeholder="Image or video URL" value={mediaLinkInput} onChange={e => setMediaLinkInput(e.target.value)} className="flex-1 h-9" />
-              <Button size="sm" onClick={handleMediaLink} disabled={!mediaLinkInput.trim()} className="h-9">Add</Button>
+          {mediaUrl ? renderMediaPreview() : (
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Media URL (image or video link)</label>
+              <Input placeholder="https://... image or video URL" value={mediaUrl} onChange={e => handleMediaUrl(e.target.value)} type="url" />
+              <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
+                <LinkIcon size={9} /> Supports image URLs, YouTube links, and direct video URLs
+              </p>
             </div>
           )}
 
@@ -473,7 +431,7 @@ function AdsTab() {
                         <div className="text-[10px] text-muted-foreground flex items-center gap-1"><Video size={10} /> Video file</div>
                       )
                     ) : (
-                      <img src={a.media_url} alt="" className="w-full max-h-20 object-cover rounded-lg" />
+                      <img src={a.media_url} alt="" className="w-full max-h-20 object-cover rounded-lg" loading="lazy" />
                     )}
                   </div>
                 )}
@@ -510,10 +468,10 @@ function PromotionsTab() {
     const youtubeEmbed = getYouTubeEmbedUrl(p.media_url);
     if (p.media_type === "video") {
       return youtubeEmbed
-        ? <iframe src={youtubeEmbed} className="w-full aspect-video rounded-lg" allowFullScreen />
+        ? <iframe src={youtubeEmbed} className="w-full aspect-video rounded-lg" allowFullScreen loading="lazy" />
         : <video src={p.media_url} className="w-full max-h-24 rounded-lg" controls />;
     }
-    return <img src={p.media_url} alt="" className="w-full max-h-24 rounded-lg object-cover" />;
+    return <img src={p.media_url} alt="" className="w-full max-h-24 rounded-lg object-cover" loading="lazy" />;
   };
 
   return (
