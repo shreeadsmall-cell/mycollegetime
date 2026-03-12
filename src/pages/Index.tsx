@@ -63,6 +63,14 @@ const Index = () => {
     window.history.pushState({ screen: s }, "");
   };
 
+  const handleSwipeBack = useCallback(() => {
+    if (screen !== "dashboard" && screen !== "setup") {
+      window.history.back();
+    }
+  }, [screen]);
+
+  const swipeHandlers = useSwipeBack({ onSwipeRight: handleSwipeBack });
+
   if (authLoading) {
     return (
       <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
