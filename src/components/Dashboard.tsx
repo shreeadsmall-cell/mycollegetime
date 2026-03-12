@@ -11,7 +11,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { AdPlayer } from "@/components/AdPlayer";
-import { Clock, CalendarDays, Plus, RotateCcw, Bell, BarChart3, Shield, Sparkles, RefreshCw, Home, CalendarClock } from "lucide-react";
+import { Clock, CalendarDays, Plus, RotateCcw, Bell, BarChart3, Shield, Sparkles, RefreshCw, CalendarClock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
