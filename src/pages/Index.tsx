@@ -163,6 +163,7 @@ const Index = () => {
               <BunkPlanner onBack={() => navigateTo("dashboard")} userId={user?.id} />
             )}
           </div>
+        </div>
 
         {showAddModal && (
           <div className="fixed inset-0 z-50 flex items-end bg-foreground/40 backdrop-blur-sm">
