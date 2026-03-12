@@ -145,13 +145,7 @@ export function Dashboard({ onAddLecture, onReset, onViewWeekly, onBunkPlanner, 
     setCurrentAd(null);
   }, []);
 
-  const navItems = [
-    { key: "dashboard", label: "Home", icon: Home, onClick: () => {}, isActive: activeScreen === "dashboard" },
-    { key: "weekly", label: "Weekly", icon: CalendarDays, onClick: onViewWeekly, isActive: false },
-    { key: "attendance", label: "Attend", icon: BarChart3, onClick: onAttendance, isActive: false },
-    { key: "bunk", label: "Bunk", icon: CalendarClock, onClick: onBunkPlanner, isActive: false },
-    { key: "promote", label: "Promote", icon: Sparkles, onClick: onPromote, isActive: false },
-  ];
+  
 
   return (
     <div
