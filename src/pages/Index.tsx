@@ -99,7 +99,7 @@ const Index = () => {
 
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-      <div className="max-w-md mx-auto relative">
+      <div className="max-w-md mx-auto relative" {...swipeHandlers}>
         <OfflineBanner />
 
         {user && (
