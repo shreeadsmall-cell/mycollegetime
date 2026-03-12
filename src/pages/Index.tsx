@@ -13,8 +13,9 @@ import { BunkPlanner } from "@/components/BunkPlanner";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { FloatingAdminButton } from "@/components/FloatingAdminButton";
 import { ThemeProvider } from "next-themes";
-import { Loader2, Cloud, CloudOff, LogOut } from "lucide-react";
+import { Loader2, Cloud, CloudOff, LogOut, Home, CalendarDays, BarChart3, CalendarClock, Sparkles, Plus } from "lucide-react";
 import { useSwipeBack } from "@/hooks/useSwipeBack";
+import { Button } from "@/components/ui/button";
 
 type Screen = "setup" | "dashboard" | "weekly" | "add" | "attendance" | "promote" | "bunk";
 
@@ -194,6 +195,49 @@ const Index = () => {
         )}
 
         <FloatingAdminButton />
+
+        {/* Persistent bottom navigation */}
+        {screen !== "setup" && (
+          <div className="fixed bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur-md border-t border-border max-w-md mx-auto shadow-[0_-2px_10px_hsl(var(--foreground)/0.05)]">
+            <div className="px-4 pt-2">
+              <Button
+                onClick={() => setShowAddModal(true)}
+                className="w-full h-10 gap-2 font-semibold text-sm bg-primary text-primary-foreground"
+              >
+                <Plus size={16} /> Add Lecture
+              </Button>
+            </div>
+            <div className="grid grid-cols-5 px-2 pb-[env(safe-area-inset-bottom,8px)] pt-1">
+              {[
+                { key: "dashboard", label: "Home", icon: Home, target: "dashboard" as Screen },
+                { key: "weekly", label: "Weekly", icon: CalendarDays, target: "weekly" as Screen },
+                { key: "attendance", label: "Attend", icon: BarChart3, target: "attendance" as Screen },
+                { key: "bunk", label: "Bunk", icon: CalendarClock, target: "bunk" as Screen },
+                { key: "promote", label: "Promote", icon: Sparkles, target: "promote" as Screen },
+              ].map((item) => {
+                const Icon = item.icon;
+                const isActive = screen === item.target;
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => navigateTo(item.target)}
+                    className={`relative flex flex-col items-center gap-0.5 py-1.5 transition-colors ${
+                      isActive
+                        ? "text-primary"
+                        : "text-muted-foreground hover:text-primary"
+                    }`}
+                  >
+                    {isActive && (
+                      <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-primary" />
+                    )}
+                    <Icon size={18} />
+                    <span className={`text-[10px] ${isActive ? "font-semibold" : ""}`}>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </ThemeProvider>
   );

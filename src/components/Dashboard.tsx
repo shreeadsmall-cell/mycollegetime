@@ -11,7 +11,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { AdPlayer } from "@/components/AdPlayer";
-import { Clock, CalendarDays, Plus, RotateCcw, Bell, BarChart3, Shield, Sparkles, RefreshCw, Home, CalendarClock } from "lucide-react";
+import { Clock, CalendarDays, Plus, RotateCcw, Bell, BarChart3, Shield, Sparkles, RefreshCw, CalendarClock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
@@ -145,13 +145,7 @@ export function Dashboard({ onAddLecture, onReset, onViewWeekly, onBunkPlanner, 
     setCurrentAd(null);
   }, []);
 
-  const navItems = [
-    { key: "dashboard", label: "Home", icon: Home, onClick: () => {}, isActive: activeScreen === "dashboard" },
-    { key: "weekly", label: "Weekly", icon: CalendarDays, onClick: onViewWeekly, isActive: false },
-    { key: "attendance", label: "Attend", icon: BarChart3, onClick: onAttendance, isActive: false },
-    { key: "bunk", label: "Bunk", icon: CalendarClock, onClick: onBunkPlanner, isActive: false },
-    { key: "promote", label: "Promote", icon: Sparkles, onClick: onPromote, isActive: false },
-  ];
+  
 
   return (
     <div
@@ -318,40 +312,7 @@ export function Dashboard({ onAddLecture, onReset, onViewWeekly, onBunkPlanner, 
         </div>
       </div>
 
-      {/* Sticky bottom navigation bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur-md border-t border-border max-w-md mx-auto shadow-[0_-2px_10px_hsl(var(--foreground)/0.05)]">
-        <div className="px-4 pt-2">
-          <Button
-            onClick={onAddLecture}
-            className="w-full h-10 gap-2 font-semibold text-sm bg-primary text-primary-foreground"
-          >
-            <Plus size={16} /> Add Lecture
-          </Button>
-        </div>
-        <div className="grid grid-cols-5 px-2 pb-[env(safe-area-inset-bottom,8px)] pt-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = item.isActive;
-            return (
-              <button
-                key={item.key}
-                onClick={item.onClick}
-                className={`relative flex flex-col items-center gap-0.5 py-1.5 transition-colors ${
-                  isActive
-                    ? "text-primary"
-                    : "text-muted-foreground hover:text-primary"
-                }`}
-              >
-                {isActive && (
-                  <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-primary" />
-                )}
-                <Icon size={18} />
-                <span className={`text-[10px] ${isActive ? "font-semibold" : ""}`}>{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      
 
       {/* Notification Settings Modal */}
       {showNotifications && (
