@@ -14,6 +14,7 @@ import { OfflineBanner } from "@/components/OfflineBanner";
 import { FloatingAdminButton } from "@/components/FloatingAdminButton";
 import { ThemeProvider } from "next-themes";
 import { Loader2, Cloud, CloudOff, LogOut } from "lucide-react";
+import { useSwipeBack } from "@/hooks/useSwipeBack";
 
 type Screen = "setup" | "dashboard" | "weekly" | "add" | "attendance" | "promote" | "bunk";
 
