@@ -26,6 +26,20 @@ const Index = () => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
 
+  // Browser back button support
+  useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      const state = e.state as { screen?: Screen } | null;
+      if (state?.screen) {
+        setScreen(state.screen);
+      } else {
+        setScreen(hasSetup ? "dashboard" : "setup");
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [hasSetup]);
+
   useEffect(() => {
     trackPage(screen);
   }, [screen, trackPage]);
@@ -36,6 +50,7 @@ const Index = () => {
     resetTimetable();
     setShowResetConfirm(false);
     setScreen("setup");
+    window.history.replaceState({ screen: "setup" }, "");
   };
 
   const navigateTo = (s: Screen) => {
@@ -43,6 +58,8 @@ const Index = () => {
     if (s !== "dashboard" && s !== "setup") {
       trackFeature(s);
     }
+    // Push to browser history so back button works
+    window.history.pushState({ screen: s }, "");
   };
 
   if (authLoading) {
