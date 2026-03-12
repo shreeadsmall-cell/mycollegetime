@@ -13,8 +13,9 @@ import { BunkPlanner } from "@/components/BunkPlanner";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { FloatingAdminButton } from "@/components/FloatingAdminButton";
 import { ThemeProvider } from "next-themes";
-import { Loader2, Cloud, CloudOff, LogOut } from "lucide-react";
+import { Loader2, Cloud, CloudOff, LogOut, Home, CalendarDays, BarChart3, CalendarClock, Sparkles, Plus } from "lucide-react";
 import { useSwipeBack } from "@/hooks/useSwipeBack";
+import { Button } from "@/components/ui/button";
 
 type Screen = "setup" | "dashboard" | "weekly" | "add" | "attendance" | "promote" | "bunk";
 
