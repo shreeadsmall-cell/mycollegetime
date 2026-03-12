@@ -129,39 +129,40 @@ const Index = () => {
           </div>
         )}
 
-        <div className="pt-8">
-          {screen === "setup" && (
-            <TimetableSetup onDone={() => navigateTo("dashboard")} userId={user?.id} />
-          )}
-          {screen === "dashboard" && (
-            <Dashboard
-              onAddLecture={() => setShowAddModal(true)}
-              onReset={handleReset}
-              onViewWeekly={() => navigateTo("weekly")}
-              onBunkPlanner={() => navigateTo("bunk")}
-              onAttendance={() => navigateTo("attendance")}
-              onPromote={() => navigateTo("promote")}
-              userId={user?.id}
-              activeScreen={screen}
-            />
-          )}
-          {screen === "weekly" && (
-            <WeeklyView
-              onAddLecture={() => setShowAddModal(true)}
-              onBack={() => navigateTo("dashboard")}
-              userId={user?.id}
-            />
-          )}
-          {screen === "attendance" && (
-            <AttendanceCalculator onBack={() => navigateTo("dashboard")} timetableLectures={lectures} />
-          )}
-          {screen === "promote" && user && (
-            <PromotionSubmit onBack={() => navigateTo("dashboard")} userId={user.id} />
-          )}
-          {screen === "bunk" && (
-            <BunkPlanner onBack={() => navigateTo("dashboard")} userId={user?.id} />
-          )}
-        </div>
+        <div className="pt-8" key={screen}>
+          <div className="animate-fade-in">
+            {screen === "setup" && (
+              <TimetableSetup onDone={() => navigateTo("dashboard")} userId={user?.id} />
+            )}
+            {screen === "dashboard" && (
+              <Dashboard
+                onAddLecture={() => setShowAddModal(true)}
+                onReset={handleReset}
+                onViewWeekly={() => navigateTo("weekly")}
+                onBunkPlanner={() => navigateTo("bunk")}
+                onAttendance={() => navigateTo("attendance")}
+                onPromote={() => navigateTo("promote")}
+                userId={user?.id}
+                activeScreen={screen}
+              />
+            )}
+            {screen === "weekly" && (
+              <WeeklyView
+                onAddLecture={() => setShowAddModal(true)}
+                onBack={() => navigateTo("dashboard")}
+                userId={user?.id}
+              />
+            )}
+            {screen === "attendance" && (
+              <AttendanceCalculator onBack={() => navigateTo("dashboard")} timetableLectures={lectures} />
+            )}
+            {screen === "promote" && user && (
+              <PromotionSubmit onBack={() => navigateTo("dashboard")} userId={user.id} />
+            )}
+            {screen === "bunk" && (
+              <BunkPlanner onBack={() => navigateTo("dashboard")} userId={user?.id} />
+            )}
+          </div>
 
         {showAddModal && (
           <div className="fixed inset-0 z-50 flex items-end bg-foreground/40 backdrop-blur-sm">
