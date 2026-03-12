@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTimetable } from "@/hooks/useTimetable";
 import { useAuth } from "@/hooks/useAuth";
 import { useAnalytics } from "@/hooks/useAnalytics";
@@ -14,6 +14,7 @@ import { OfflineBanner } from "@/components/OfflineBanner";
 import { FloatingAdminButton } from "@/components/FloatingAdminButton";
 import { ThemeProvider } from "next-themes";
 import { Loader2, Cloud, CloudOff, LogOut } from "lucide-react";
+import { useSwipeBack } from "@/hooks/useSwipeBack";
 
 type Screen = "setup" | "dashboard" | "weekly" | "add" | "attendance" | "promote" | "bunk";
 
@@ -62,6 +63,14 @@ const Index = () => {
     window.history.pushState({ screen: s }, "");
   };
 
+  const handleSwipeBack = useCallback(() => {
+    if (screen !== "dashboard" && screen !== "setup") {
+      window.history.back();
+    }
+  }, [screen]);
+
+  const swipeHandlers = useSwipeBack({ onSwipeRight: handleSwipeBack });
+
   if (authLoading) {
     return (
       <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
@@ -90,7 +99,7 @@ const Index = () => {
 
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-      <div className="max-w-md mx-auto relative">
+      <div className="max-w-md mx-auto relative" {...swipeHandlers}>
         <OfflineBanner />
 
         {user && (
