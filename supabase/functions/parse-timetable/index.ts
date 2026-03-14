@@ -12,9 +12,9 @@ serve(async (req) => {
   }
 
   try {
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    if (!GEMINI_API_KEY) {
-      throw new Error("GEMINI_API_KEY is not configured");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY is not configured");
     }
 
     const formData = await req.formData();
@@ -59,47 +59,58 @@ Rules:
 - Return ONLY the JSON array, no markdown, no explanation, no code blocks`;
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      "https://ai.gateway.lovable.dev/v1/chat/completions",
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
-          contents: [
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: systemPrompt },
             {
-              parts: [
-                { text: systemPrompt },
+              role: "user",
+              content: [
                 {
-                  inline_data: {
-                    mime_type: mimeType,
-                    data: base64Data,
+                  type: "image_url",
+                  image_url: {
+                    url: `data:${mimeType};base64,${base64Data}`,
                   },
                 },
-                { text: "Extract all timetable entries from this image. Return only the JSON array." },
+                {
+                  type: "text",
+                  text: "Extract all timetable entries from this image. Return only the JSON array.",
+                },
               ],
             },
           ],
-          generationConfig: {
-            maxOutputTokens: 16000,
-          },
         }),
       }
     );
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("Gemini API error:", response.status, errText);
+      console.error("AI gateway error:", response.status, errText);
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      throw new Error(`Gemini API error: ${response.status}`);
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "AI credits exhausted. Please try again later." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      throw new Error(`AI gateway error: ${response.status}`);
     }
 
     const aiResult = await response.json();
-    const rawContent = aiResult.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-    console.log("Gemini raw content length:", rawContent.length);
+    const rawContent = aiResult.choices?.[0]?.message?.content ?? "";
+    console.log("AI raw content length:", rawContent.length);
 
     let cleaned = rawContent.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
 
