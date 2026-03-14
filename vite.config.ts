@@ -18,11 +18,11 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "robots.txt"],
+      includeAssets: ["favicon.ico", "robots.txt", "app-icon-512.png"],
       manifest: {
-        name: "CollegeTime - Timetable Manager",
+        name: "CollegeTime - Timetable & Attendance Manager",
         short_name: "CollegeTime",
-        description: "Manage your college weekly timetable",
+        description: "Manage your college weekly timetable, track attendance, plan bunks, and never miss a lecture.",
         theme_color: "#2563eb",
         background_color: "#f1f4f9",
         display: "standalone",
@@ -33,6 +33,12 @@ export default defineConfig(({ mode }) => ({
             src: "favicon.ico",
             sizes: "64x64 32x32 24x24 16x16",
             type: "image/x-icon",
+          },
+          {
+            src: "app-icon-512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "any maskable",
           },
         ],
       },

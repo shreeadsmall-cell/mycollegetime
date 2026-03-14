@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { Link } from "react-router-dom";
 import { useTimetable, ScheduleEntry } from "@/hooks/useTimetable";
 import { useAttendance } from "@/hooks/useAttendance";
 import { useAds } from "@/hooks/useAds";
@@ -310,9 +311,14 @@ export function Dashboard({ onAddLecture, onReset, onViewWeekly, onBunkPlanner, 
             </div>
           )}
         </div>
-      </div>
 
-      
+        {/* Legal footer */}
+        <div className="flex items-center justify-center gap-3 py-4 text-xs text-muted-foreground">
+          <Link to="/privacy-policy" className="hover:text-primary transition-colors">Privacy Policy</Link>
+          <span>•</span>
+          <Link to="/terms-of-service" className="hover:text-primary transition-colors">Terms of Service</Link>
+        </div>
+      </div>
 
       {/* Notification Settings Modal */}
       {showNotifications && (
