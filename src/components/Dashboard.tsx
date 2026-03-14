@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { Link } from "react-router-dom";
 import { useTimetable, ScheduleEntry } from "@/hooks/useTimetable";
 import { useAttendance } from "@/hooks/useAttendance";
 import { useAds } from "@/hooks/useAds";
